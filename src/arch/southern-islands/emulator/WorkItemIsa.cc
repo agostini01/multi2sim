@@ -1238,6 +1238,60 @@ void WorkItem::ISA_S_MUL_I32_Impl(Instruction *instruction)
 }
 #undef INST
 
+
+/* D.u = (S0.u << 32 - S1 - S2) >> 32 - S2  bitfield extract,
+* S0=Unsigned_data, S1=field_offset, S2=field_width. */
+#define INST INST_SOP2
+void WorkItem::ISA_S_BFE_U32_Impl(Instruction *instruction)
+{
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register result;
+	Instruction::Register full_reg;
+	Instruction::Register nonzero;
+
+	// Load operands from registers.
+	s0.as_uint = ReadSReg(INST.ssrc0);
+	full_reg.as_uint = ReadSReg(INST.ssrc1);
+
+	/* s1 (offset) should be [4:0] of ssrc1 and s2 (width) should 
+	be [22:16] of ssrc1*/
+	s1.as_uint = full_reg.as_uint & 0x1F;
+	s2.as_uint = (full_reg.as_uint >> 16) & 0x7F;
+
+	// Calculate the result.
+	if (s2.as_uint == 0)
+	{
+		result.as_uint = 0;
+	}
+	else if (s2.as_uint + s1.as_uint < 32)
+	{
+		result.as_uint = (s0.as_uint << (32 - s1.as_uint -
+				s2.as_uint)) >>
+				(32 - s2.as_uint);
+	}
+	else
+	{
+		result.as_uint = s0.as_uint >> s1.as_uint;
+	}
+
+	// Write the results.
+	// Store the data in the destination register
+	WriteSReg(INST.sdst, result.as_uint);
+	// Store the data in the destination register
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
+
+	// Print isa debug information.
+	if (Emulator::isa_debug)
+	{
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ",
+				INST.sdst, result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
+	}
+}
+#undef INST
+
 /* D.i = (S0.i >> S1.u[4:0]) & ((1 << S2.u[4:0]) - 1); bitfield extract,
  * S0=data, S1=field_offset, S2=field_width. */
 #define INST INST_SOP2
@@ -1285,14 +1339,13 @@ void WorkItem::ISA_S_BFE_I32_Impl(Instruction *instruction)
 	// Print isa debug information.
 	if (Emulator::isa_debug)
 	{
-		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ",
+				INST.sdst, result.as_uint);
 		Emulator::isa_debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 	
 }
 #undef INST
-
-
 
 /*
  * SOPK
