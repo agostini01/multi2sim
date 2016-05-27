@@ -25,27 +25,48 @@
 
 void Multi2Sim::WelcomeMessage(std::ostream &os)
 {
-    std::cout<<"testing"<<std::endl;
+    std::cout<<"M2S::WelcomeMessage Function"<<std::endl;
 }
 
-
-
-void Multi2Sim::setCount(int val)
+void Multi2Sim::m2sStep()
 {
-    m_count = val;
+    std::cout<<"M2S::vpiStep()"<<std::endl;
 }
 
-int Multi2Sim::getCount()
+void Multi2Sim::m2sInitialize()
 {
-    return m_count;
+    std::cout<<"M2S::vpiInitialize()"<<std::endl;
+
+}
+
+void Multi2Sim::m2sReset()
+{
+    std::cout<<"M2S::vpiReset()"<<std::endl;
+
+}
+
+void Multi2Sim::m2sFinalize()
+{
+    std::cout<<"M2S::vpiFinalize()"<<std::endl;
+
+}
+
+void Multi2Sim::m2sAccess(const unsigned int &mod
+			 , const unsigned int &type
+			 , const unsigned int &address)
+{
+    std::cout<<"M2S::vpiAccess()"		<<std::endl
+	     <<"\tmod = "	    << mod	<<std::endl
+	     <<"\ttype = "    << type	<<std::endl
+	     <<"\taddress = " << address	<<std::endl;
 }
 
 
 void Multi2Sim::LoadProgram(const std::vector<std::string> &arguments
-			    , const std::vector<std::string> &environment
-			    , const std::string &current_directory
-			    , const std::string &stdin_file_name
-			    , const std::string &stdout_file_name)
+			   , const std::vector<std::string> &environment
+			   , const std::string &current_directory
+			   , const std::string &stdin_file_name
+			   , const std::string &stdout_file_name)
 {
 }
 

@@ -18,11 +18,29 @@ private:
     Multi2Sim(){}
     Multi2Sim(Multi2Sim const&);
     void operator=(Multi2Sim const&);
-    int m_count;
 
 public:
     void WelcomeMessage(std::ostream &os);
 
+    // Initialize multi2sim with the proper arguments
+    void m2sInitialize();
+
+    // Reset m2s bringing it to its initial state
+    void m2sReset();
+
+    // Tells m2s to process events scheduled to next clock cycle
+    void m2sStep();
+
+    // Enquee and access event
+    void m2sAccess(const unsigned int & mod
+		  ,const unsigned int & type
+		  ,const unsigned int & address
+		  );
+
+    // Finilize simulation and generate dump files
+    void m2sFinalize();
+
+private:
     // Load a program from the command line
     void LoadProgram(const std::vector<std::string> &arguments,
 		     const std::vector<std::string> &environment = {},
@@ -30,8 +48,6 @@ public:
 		     const std::string &stdin_file_name = "",
 		     const std::string &stdout_file_name = ""
 		    );
-    void setCount(int val);
-    int getCount();
 
     // Load programs from context configuration file
     void LoadPrograms();
@@ -57,9 +73,6 @@ public:
 
     int MainProgram(int argc, char **argv);
 
-
-
-private:
     //
     // Configuration options
     //
