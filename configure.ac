@@ -120,8 +120,8 @@ fi
 ###############
 
 debug=false
-CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG"
-CXXFLAGS="-msse2 -std=gnu++0x -O3 -DNDEBUG"
+CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG -m32 -fPIC"
+CXXFLAGS="-msse2 -std=gnu++0x -O3 -DNDEBUG -m32 -fPIC"
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
 [
@@ -131,8 +131,8 @@ AC_ARG_ENABLE(debug,
 		
 		# Add flag '-Wno-error=deprecated-declarations' only if it is supported.
 		# This flag prevents warnings caused by newer GTK versions that would cause with -Werror
-		CXXFLAGS="-msse2 -std=gnu++0x -Wall -Werror -g -O0"
-		saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
+		CXXFLAGS="-msse2 -std=gnu++0x -Wall -Werror -g -O0 -m32 -fPIC"
+		saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99 -m32 -fPIC"
 		CFLAGS="-Wno-error=deprecated-declarations"
 		AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
 		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
