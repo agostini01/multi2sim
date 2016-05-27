@@ -455,16 +455,22 @@ void RegisterDrivers()
 
 void MainLoop()
 {
+// This part has to move to INIT too
 	// Activate signal handler
 	esim::Engine *esim = esim::Engine::getInstance();
 	esim->EnableSignals();
 
 	// Get singletons
+// Remove this one
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+
+// INIT FINISHES HERE
+
 
 	// Simulation loop
 	while (!esim->hasFinished())
 	{
+// This is the step
 		// Run iteration for all architectures. This function returns
 		// the number of architectures actively running emulation, as
 		// well as the number of architectures running an active timing
@@ -480,6 +486,7 @@ void MainLoop()
 		if (num_active_timing_simulators)
 			esim->ProcessEvents();
 
+// Remove rest
 		// If neither functional nor timing simulation was performed for
 		// any architecture, it means that all guest contexts finished
 		// execution - simulation can end.
@@ -494,8 +501,10 @@ void MainLoop()
 				&& !(m2s_loop_iterations & ((1 << 17) - 1))
 				&& esim->getRealTime() > m2s_max_time * 1000000)
 			esim->Finish("MaxTime");
+// Step finishes here
 	}
 
+// This is finalize
 	// Process all remaining events
 	esim->ProcessAllEvents();
 
@@ -679,15 +688,21 @@ int MainProgram(int argc, char **argv)
 
 	// Load programs
 	LoadPrograms();
-		
+	
+//INITIALIZE ENDS HERE
+	
 	// Main simulation loop
 	MainLoop();
 
+// MainLoop has to change to traverse one single cycle 
 	// Statistics summary
+
+// This is the *other* part of Finalize
 	DumpStatisticsSummary();
 
 	// Reports
 	DumpReports();
+// Finalize finishes here
 
 	// Success
 	return 0;
