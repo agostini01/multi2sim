@@ -22,10 +22,35 @@
  */
 
 #include "m2s.h"
+#include <sys/time.h> // timeOfTheDay()
+#include <lib/cpp/Terminal.h> // BlueTerm
 
 void Multi2Sim::WelcomeMessage(std::ostream &os)
 {
     std::cout<<"M2S::WelcomeMessage Function"<<std::endl;
+
+    // Compute simulation ID
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    unsigned min_id = misc::StringAlnumToInt("10000");
+    unsigned max_id = misc::StringAlnumToInt("ZZZZZ");
+    unsigned id = (tv.tv_sec * 1000000000 + tv.tv_usec)
+		    % (max_id - min_id + 1)
+		    + min_id;
+    std::string alnum_id = misc::StringIntToAlnum(id);
+
+    // Blue color
+    misc::Terminal::Blue(os);
+
+    // Print welcome message in the standard error output
+    os << '\n' << "; Multi2Sim " << VERSION << " - ";
+    os << "A Simulation Framework for CPU-GPU Heterogeneous Computing\n";
+    os << "; Please use command 'm2s --help' for a list of command-line options.\n";
+    os << "; Simulation alpha-numeric ID: " << alnum_id << '\n';
+    os << '\n';
+
+    // Reset terminal color
+    misc::Terminal::Reset(os);
 }
 
 void Multi2Sim::m2sStep()
@@ -36,7 +61,7 @@ void Multi2Sim::m2sStep()
 void Multi2Sim::m2sInitialize()
 {
     std::cout<<"M2S::vpiInitialize()"<<std::endl;
-
+    WelcomeMessage(std::cerr);
 }
 
 void Multi2Sim::m2sReset()
