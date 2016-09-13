@@ -103,95 +103,95 @@ void Multi2Sim::m2sInitialize()
     memory_system->ReadConfiguration(&ini_file_mem_1);
 
     // Get modules
-    mem::Module *module_l1_0 = memory_system->getModule("mod-l1-0");
-    mem::Module *module_l1_1 = memory_system->getModule("mod-l1-1");
-    mem::Module *module_l2_0 = memory_system->getModule("mod-l2-0");
-    mem::Module *module_l3 = memory_system->getModule("mod-l3");
-    mem::Module *module_mm = memory_system->getModule("mod-mm");
-    if(module_l1_0 == nullptr)
-	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
-    if(module_l1_1 == nullptr)
-	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
-    if(module_l2_0 == nullptr)
-	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
-    if(module_l3 == nullptr)
-	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
-    if(module_mm == nullptr)
-	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
+//    mem::Module *module_l1_0 = memory_system->getModule("mod-l1-0");
+//    mem::Module *module_l1_1 = memory_system->getModule("mod-l1-1");
+//    mem::Module *module_l2_0 = memory_system->getModule("mod-l2-0");
+//    mem::Module *module_l3 = memory_system->getModule("mod-l3");
+//    mem::Module *module_mm = memory_system->getModule("mod-mm");
+//    if(module_l1_0 == nullptr)
+//	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
+//    if(module_l1_1 == nullptr)
+//	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
+//    if(module_l2_0 == nullptr)
+//	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
+//    if(module_l3 == nullptr)
+//	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
+//    if(module_mm == nullptr)
+//	 std::cout<<"M2S::nullptr found!!!!"<<std::endl;
 
-    //Set Block States
-    module_l1_0->getCache()->getBlock(0, 0)->setStateTag(mem::Cache::BlockExclusive, 0x0);
-    module_l2_0->getCache()->getBlock(0, 0)->setStateTag(mem::Cache::BlockExclusive, 0x0);
-    module_l3->getCache()->getBlock(0, 0)->setStateTag(mem::Cache::BlockExclusive, 0x0);
-    module_mm->getCache()->getBlock(0, 0)->setStateTag(mem::Cache::BlockExclusive, 0x0);
-    module_l2_0->setOwner(0, 0, 0, module_l1_0);
-    module_l3->setOwner(0, 0, 0, module_l2_0);
-    module_mm->setOwner(0, 0, 0, module_l3);
-    module_l2_0->setSharer(0, 0, 0, module_l1_0);
-    module_l3->setSharer(0, 0, 0, module_l2_0);
-    module_mm->setSharer(0, 0, 0, module_l3);
+//    //Set Block States
+//    module_l1_0->getCache()->getBlock(0, 0)->setStateTag(mem::Cache::BlockExclusive, 0x0);
+//    module_l2_0->getCache()->getBlock(0, 0)->setStateTag(mem::Cache::BlockExclusive, 0x0);
+//    module_l3->getCache()->getBlock(0, 0)->setStateTag(mem::Cache::BlockExclusive, 0x0);
+//    module_mm->getCache()->getBlock(0, 0)->setStateTag(mem::Cache::BlockExclusive, 0x0);
+//    module_l2_0->setOwner(0, 0, 0, module_l1_0);
+//    module_l3->setOwner(0, 0, 0, module_l2_0);
+//    module_mm->setOwner(0, 0, 0, module_l3);
+//    module_l2_0->setSharer(0, 0, 0, module_l1_0);
+//    module_l3->setSharer(0, 0, 0, module_l2_0);
+//    module_mm->setSharer(0, 0, 0, module_l3);
 
-    // EDIT HERE
-    // Accesses
-    int witness = -2;
-    module_l1_0->Access(mem::Module::AccessStore, 0x0, &witness);
-    module_l1_1->Access(mem::Module::AccessLoad, 0x200, &witness);
+//    // EDIT HERE
+//    // Accesses
+//    int witness = -2;
+//    module_l1_0->Access(mem::Module::AccessStore, 0x0, &witness);
+//    module_l1_1->Access(mem::Module::AccessLoad, 0x200, &witness);
 
-    // Simulation loop
-    esim::Engine *esim_engine = esim::Engine::getInstance();
-    while (witness < 0)
-	    esim_engine->ProcessEvents();
+//    // Simulation loop
+//    esim::Engine *esim_engine = esim::Engine::getInstance();
+//    while (witness < 0)
+//	    esim_engine->ProcessEvents();
 
-    // Check block
-    unsigned tag;
-    mem::Cache::BlockState state;
-    module_l1_0->getCache()->getBlock(0, 0, tag, state);
-    if(tag != 0x0)
-	std::cout<<"M2S::bad tag 1!!!!"<<std::endl;
-    if(state != mem::Cache::BlockInvalid)
-	std::cout<<"M2S::bad state 1!!!!"<<std::endl;
+//    // Check block
+//    unsigned tag;
+//    mem::Cache::BlockState state;
+//    module_l1_0->getCache()->getBlock(0, 0, tag, state);
+//    if(tag != 0x0)
+//	std::cout<<"M2S::bad tag 1!!!!"<<std::endl;
+//    if(state != mem::Cache::BlockInvalid)
+//	std::cout<<"M2S::bad state 1!!!!"<<std::endl;
 
-    // Check block
-    module_l1_1->getCache()->getBlock(0, 0, tag, state);
-    if(tag != 0x200)
-	std::cout<<"M2S::bad tag 2!!!!"<<std::endl;
-    if(state != mem::Cache::BlockExclusive)
-	std::cout<<"M2S::bad state 2!!!!"<<std::endl;
+//    // Check block
+//    module_l1_1->getCache()->getBlock(0, 0, tag, state);
+//    if(tag != 0x200)
+//	std::cout<<"M2S::bad tag 2!!!!"<<std::endl;
+//    if(state != mem::Cache::BlockExclusive)
+//	std::cout<<"M2S::bad state 2!!!!"<<std::endl;
 
-    // Check block
-    module_l2_0->getCache()->getBlock(0, 0, tag, state);
-    if(tag != 0x200)
-	std::cout<<"M2S::bad tag 3!!!!"<<std::endl;
-    if(state != mem::Cache::BlockExclusive)
-	std::cout<<"M2S::bad state 3!!!!"<<std::endl;
+//    // Check block
+//    module_l2_0->getCache()->getBlock(0, 0, tag, state);
+//    if(tag != 0x200)
+//	std::cout<<"M2S::bad tag 3!!!!"<<std::endl;
+//    if(state != mem::Cache::BlockExclusive)
+//	std::cout<<"M2S::bad state 3!!!!"<<std::endl;
 
-    // Check block
-    module_l3->getCache()->getBlock(0, 0, tag, state);
-    if(tag != 0x0)
-	std::cout<<"M2S::bad tag 4!!!!"<<std::endl;
-    if(state != mem::Cache::BlockModified)
-	std::cout<<"M2S::bad state 4!!!!"<<std::endl;
+//    // Check block
+//    module_l3->getCache()->getBlock(0, 0, tag, state);
+//    if(tag != 0x0)
+//	std::cout<<"M2S::bad tag 4!!!!"<<std::endl;
+//    if(state != mem::Cache::BlockModified)
+//	std::cout<<"M2S::bad state 4!!!!"<<std::endl;
 
-    // Check block
-    module_l3->getCache()->getBlock(8, 0, tag, state);
-    if(tag != 0x200)
-	std::cout<<"M2S::bad tag 5!!!!"<<std::endl;
-    if(state != mem::Cache::BlockExclusive)
-	std::cout<<"M2S::bad state 5!!!!"<<std::endl;
+//    // Check block
+//    module_l3->getCache()->getBlock(8, 0, tag, state);
+//    if(tag != 0x200)
+//	std::cout<<"M2S::bad tag 5!!!!"<<std::endl;
+//    if(state != mem::Cache::BlockExclusive)
+//	std::cout<<"M2S::bad state 5!!!!"<<std::endl;
 
-    // Check block
-    module_mm->getCache()->getBlock(0, 0, tag, state);
-    if(tag != 0x0)
-	std::cout<<"M2S::bad tag 6!!!!"<<std::endl;
-    if(state != mem::Cache::BlockExclusive)
-	std::cout<<"M2S::bad state 6!!!!"<<std::endl;
+//    // Check block
+//    module_mm->getCache()->getBlock(0, 0, tag, state);
+//    if(tag != 0x0)
+//	std::cout<<"M2S::bad tag 6!!!!"<<std::endl;
+//    if(state != mem::Cache::BlockExclusive)
+//	std::cout<<"M2S::bad state 6!!!!"<<std::endl;
 
-    // Check block
-    module_mm->getCache()->getBlock(8, 0, tag, state);
-    if(tag != 0x200)
-	std::cout<<"M2S::bad tag 7!!!!"<<std::endl;
-    if(state != mem::Cache::BlockExclusive)
-	std::cout<<"M2S::bad state 7!!!!"<<std::endl;
+//    // Check block
+//    module_mm->getCache()->getBlock(8, 0, tag, state);
+//    if(tag != 0x200)
+//	std::cout<<"M2S::bad tag 7!!!!"<<std::endl;
+//    if(state != mem::Cache::BlockExclusive)
+//	std::cout<<"M2S::bad state 7!!!!"<<std::endl;
 
     std::cout<<"M2S::HERE!!!!"<<std::endl;
 }
@@ -270,10 +270,31 @@ void Multi2Sim::Cleanup()
 
 int Multi2Sim::MainProgram(int argc, char **argv)
 {
+    // Initialize multi2sim with the proper arguments
+    m2sInitialize();
+
+    m2sAccess(0, 0, 10);
+    m2sStep();
+
+    m2sAccess(0, 0, 12);
+    m2sStep();
+    m2sAccess(0, 0, 14);
+    m2sStep();
+
     return 0;
 }
 
-int main()
+int main(int argc, char **argv)
 {
-    return 0;
+    // Main exception handler
+    try
+    {
+	    // Run main program
+	    return Multi2Sim::getInstance().MainProgram(argc, argv);
+    }
+    catch (misc::Exception &e)
+    {
+	    e.Dump();
+	    return 1;
+    }
 }

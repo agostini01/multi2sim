@@ -29,9 +29,11 @@ public:
     void m2sReset();
 
     // Tells m2s to process events scheduled to next clock cycle
+    // m2sStep will change a verilog object allowing the "hdl cores" to access
+    // some addresses depending on m2s memory model.
     void m2sStep();
 
-    // Enquee and access event
+    // Enquee an access event
     void m2sAccess(const unsigned int & mod
 		  ,const unsigned int & type
 		  ,const unsigned int & address
@@ -39,6 +41,8 @@ public:
 
     // Finilize simulation and generate dump files
     void m2sFinalize();
+
+    int MainProgram(int argc, char **argv);
 
 private:
     // Load a program from the command line
@@ -72,7 +76,7 @@ private:
 
     void Cleanup();
 
-    int MainProgram(int argc, char **argv);
+
 
     const std::string mem_config_0 =
 		    "[CacheGeometry geo-l1]\n"

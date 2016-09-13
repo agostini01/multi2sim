@@ -213,7 +213,9 @@ class System
 	void ConfigReadLowModules(misc::IniFile *ini_file);
 
 	void ConfigReadEntries(misc::IniFile *ini_file);
-	
+
+	void HDLConfigReadEntries(misc::IniFile *ini_file);
+
 	void ConfigCreateSwitches(misc::IniFile *ini_file);
 	
 	void ConfigCheckRoutes(misc::IniFile *ini_file);
