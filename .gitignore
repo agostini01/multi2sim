@@ -17,3 +17,6 @@ ltmain.sh
 m4
 missing
 test-driver
+m2svpi/obj/
+m2svpi/work/
+
