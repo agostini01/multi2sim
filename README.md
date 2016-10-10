@@ -81,11 +81,30 @@ Type `10` and hit `enter` to make the simulation run and finish
 ### Target sequence diagram:
 ![VPI Seq diagram](./images/vpi_seq_diagram.jpg)
 
+### Steps of implementation
+
+#### Step 0 (under development)
+
+Isolate Memory Model
+
+
+
+#### Step 1 (under development)                                                 
+                                                                                
+Verilog testbench will configure the memory object during m2s_initialize(). Accesses will be issued - m2s_access() - at different clock cycles. At eeach clock cycle the testbench will call m2s_step(), this function will update modules structures in accordance to m2s resolved events.
+                                                                                
+![step1](./images/step1.png)                                                    
+                                                                                
+#### Step 2 (not started)                                                       
+                                                                                
+Implementation of a memory controller to interface with a single computing unit communicating its accesses with m2s.
+                                                                                
+![step2](./images/step2.png)
+
 
 ### TO-DOs
 
- - Isolate the memory model from its dependencies on esim or create a
-   mock architecture
- - link the functions called by the vpi, with actual functions on m2s
- - Implement a proper test bench
+ - Isolate the memory model from its dependencies; 
+ - link the functions called by the vpi, with actual functions on m2s;
+ - Implement a proper test bench.
 
