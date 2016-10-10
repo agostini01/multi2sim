@@ -91,7 +91,7 @@ Isolate Memory Model
 
 #### Step 1 (under development)                                                 
                                                                                 
-Verilog testbench will configure the memory object during m2s_initialize(). Accesses will be issued - m2s_access() - at different clock cycles. At eeach clock cycle the testbench will call m2s_step(), this function will update modules structures in accordance to m2s resolved events.
+Verilog testbench will configure the memory object during m2s_initialize(). Accesses will be issued - m2s_access() - at different clock cycles. At each clock cycle the testbench will call m2s_step(), this function will update modules structures in accordance to m2s resolved events.
                                                                                 
 ![step1](./images/step1.png)                                                    
                                                                                 
