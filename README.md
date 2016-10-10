@@ -108,3 +108,4 @@ Implementation of a memory controller to interface with a single computing unit 
  - link the functions called by the vpi, with actual functions on m2s;
  - Implement a proper test bench.
 
+(C) to Nico Agostini (bohmagostini.n@husky.neu.edu)
