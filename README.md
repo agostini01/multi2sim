@@ -78,6 +78,10 @@ Type `1` and hit `enter` to make the simulation run for 1 second
 
 Type `10` and hit `enter` to make the simulation run and finish
 
+### Target sequence diagram:
+![VPI Seq diagram](./images/vpi_seq_diagram.jpg)
+
+
 ### TO-DOs
 
  - Isolate the memory model from its dependencies on esim or create a
