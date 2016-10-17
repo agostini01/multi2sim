@@ -19,4 +19,4 @@ missing
 test-driver
 m2svpi/obj/
 m2svpi/work/
-
+*.swp

@@ -79,11 +79,26 @@ class System
 	// Show memory configuration file
 	static bool help;
 
+	// Stand-alone simulator instantiator
+	static bool sim_mem_stand_alone;
+
 	// Message to display with '--mem-help'
 	static const std::string help_message;
 
 	// Frequency of memory system in MHz
 	static int frequency;
+
+	// Stand-alone simulation duration.
+	static long long max_cycles;
+
+	// Stand-alone message injection rate
+	static double injection_rate;
+
+	// Stand-alone store/load ratio
+	static double ratio;
+
+	// Stand-alone number of access
+	static long long access_counts;
 
 	// Sanity check cycle
 	static long long sanity_check_interval;
@@ -256,6 +271,12 @@ public:
 		return it == module_map.end() ? nullptr : it->second;
 	}
 
+	/// Return the current cycle in the memory frequency domain.
+	long long getCycle() const
+	{
+		return frequency_domain->getCycle();
+	}
+
 	/// Return a network given its name, or nullptr if no network with that
 	/// name exists.
 	net::Network *getNetwork(const std::string &name) const
@@ -285,6 +306,9 @@ public:
 	
 	/// Obtain singleton instance.
 	static System *getInstance();
+
+	/// Returns whether we are running as a stand alone simulator.
+	static bool isStandAlone() { return sim_mem_stand_alone; }
 
 	/// Returns true if the instance exists
 	static bool hasInstance() { return instance.get(); }
@@ -401,6 +425,18 @@ public:
 	// INI file. This function is internally invoked by ReadConfiguration()
 	// or externally invoked for unit testing purposes.
 	void ReadConfiguration(misc::IniFile *ini_file);
+
+
+
+
+
+	//
+	// Memory Stand Alone
+	//
+
+	/// Stand Alone simulation
+	void StandAlone();
+
 
 
 

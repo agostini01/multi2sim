@@ -45,7 +45,7 @@ esim::Trace System::trace;
 
 std::string System::sim_net_name;
 
-long long System::max_cycles = 1000000;
+long long System::max_cycles = 100000;
 
 int System::message_size = 1;
 
@@ -302,6 +302,12 @@ void System::UniformTrafficSimulation(Network *network)
 		debug << misc::fmt("___ cycle %lld ___\n", cycle);	
 		esim_engine->ProcessEvents();
 	}
+
+	// Lets finish all off
+	esim_engine->ProcessAllEvents();
+
+	// Here finish the esim
+	esim_engine->Finish("MaxTime");
 }
 
 void System::StandAlone()

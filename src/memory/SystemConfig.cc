@@ -17,8 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/common/Arch.h>
-#include <arch/common/Timing.h>
 #include <lib/esim/Engine.h>
 #include <network/EndNode.h>
 #include <network/Node.h>
@@ -183,34 +181,6 @@ const std::string System::help_message =
 	"      Size of output buffers for end nodes and switch. \n"
 	"  DefaultBandwidth = <bandwidth>\n"
 	"      Bandwidth for links and switch crossbar in number of bytes per cycle.\n"
-	"\n"
-	"Section [Entry <name>] creates an entry into the memory system. An entry is\n"
-	"a connection between a CPU core/thread or a GPU compute unit with a module\n"
-	"in the memory system.\n"
-	"\n"
-	"  Arch = { x86 | Evergreen | SouthernIslands | ... }\n"
-	"      CPU or GPU architecture affected by this entry.\n"
-	"  Core = <core>\n"
-	"      CPU core identifier. This is a value between 0 and the number of cores\n"
-	"      minus 1, as defined in the CPU configuration file. This variable\n"
-	"      should be omitted for GPU entries.\n"
-	"  Thread = <thread>\n"
-	"      CPU thread identifier. Value between 0 and the number of threads per\n"
-	"      core minus 1. Omitted for GPU entries.\n"
-	"  ComputeUnit = <id>\n"
-	"      GPU compute unit identifier. Value between 0 and the number of compute\n"
-	"      units minus 1, as defined in the GPU configuration file. This variable\n"
-	"      should be omitted for CPU entries.\n"
-	"  DataModule = <mod>\n"
-	"  ConstantDataModule = <mod>\n"
-	"  InstModule = <mod>\n"
-	"      In architectures supporting separate data/instruction caches, modules\n"
-	"      used to access memory for each particular purpose.\n"
-	"  Module = <mod>\n"
-	"      Module used to access the memory hierarchy. For architectures\n"
-	"      supporting separate data/instruction caches, this variable can be used\n"
-	"      instead of 'DataModule', 'InstModule', and 'ConstantDataModule' to\n"
-	"      indicate that data and instruction caches are unified.\n"
 	"\n";
 
 const char *System::err_config_note =
@@ -1027,107 +997,6 @@ void System::ConfigReadLowModules(misc::IniFile *ini_file)
 }
 
 
-void System::ConfigReadEntries(misc::IniFile *ini_file)
-{
-	// Get architecture pool
-	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
-
-	// Read all [Entry <name>] sections
-	debug << "Processing entries to the memory system:\n\n";
-	for (auto it = ini_file->sections_begin(),
-			e = ini_file->sections_end();
-			it != e;
-			++it)
-	{
-		// Discard if not an entry section
-		std::string section = *it;
-		if (strncasecmp(section.c_str(), "Entry ", 6))
-			continue;
-
-		// Name for the entry
-		std::string entry_name = section;
-		entry_name.erase(0, 6);
-		misc::StringTrim(entry_name);
-		if (entry_name.empty())
-			throw Error(misc::fmt("%s: section [%s]: invalid entry "
-					"name.\n%s",
-					ini_file->getPath().c_str(),
-					section.c_str(),
-					err_config_note));
-
-		// Check if variable 'Type' is used in the section. This
-		// variable was used in previous versions, now it is replaced
-		// with 'Arch'.
-		if (ini_file->Exists(section, "Type"))
-			throw Error(misc::fmt("%s: section [%s]: Variable "
-					"'Type' is obsolete, use 'Arch' "
-					"instead.\n%s",
-					ini_file->getPath().c_str(),
-					section.c_str(),
-					err_config_note));
-
-		// Read architecture in variable 'Arch'
-		std::string arch_name = ini_file->ReadString(section, "Arch");
-		misc::StringTrim(arch_name);
-		if (arch_name.empty())
-			throw Error(misc::fmt("%s: section [%s]: Variable "
-					"'Arch' is missing.\n%s",
-					ini_file->getPath().c_str(),
-					section.c_str(),
-					err_config_note));
-
-		// Get architecture
-		comm::Arch *arch = arch_pool->getByName(arch_name);
-		if (!arch)
-		{
-			std::string names = arch_pool->getArchNames();
-			throw Error(misc::fmt("%s: section [%s]: '%s' is an "
-					"invalid value for 'Arch'.\n"
-					"\tPossible values are %s.\n%s",
-					ini_file->getPath().c_str(),
-					section.c_str(),
-					arch_name.c_str(),
-					names.c_str(),
-					err_config_note));
-		}
-
-		// An architecture with an entry in the memory configuration
-		// file must undergo a detailed simulation.
-		if (arch->getSimKind() == comm::Arch::SimFunctional)
-			throw Error(misc::fmt("%s: section [%s]: %s "
-					"architecture not under detailed simulation. "
-					"A CPU/GPU architecture uses functional "
-					"simulation by default. Please activate detailed "
-					"simulation for the architecture.\n",
-					ini_file->getPath().c_str(),
-					section.c_str(),
-					arch->getName().c_str()));
-
-		// Call function to process entry. Each architecture implements
-		// its own ways to process entries to the memory hierarchy.
-		comm::Timing *timing = arch->getTiming();
-		timing->ParseMemoryConfigurationEntry(ini_file, section);
-	}
-
-	// After processing all [Entry <name>] sections, check that all
-	// architectures satisfy their entries to the memory hierarchy. Do it
-	// for those architectures with active timing simulation.
-	for (auto it = arch_pool->getTimingBegin(),
-			e = arch_pool->getTimingEnd();
-			it != e;
-			++it)
-	{
-		comm::Arch *arch = *it;
-		arch->getTiming()->CheckMemoryConfiguration(ini_file);
-	}
-}
-
-
-void System::HDLConfigReadEntries(misc::IniFile *ini_file)
-{
-
-}
-
 void System::ConfigCreateSwitches(misc::IniFile *ini_file)
 {
 	// For each network, add a switch and create node connections
@@ -1341,26 +1210,12 @@ void System::ConfigSetModuleLevel(Module *module, int level)
 
 void System::ConfigCalculateModuleLevels()
 {
-	// Start recursive level assignment with L1 modules (entries to memory)
-	// for all architectures.
-	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
-	for (auto it = arch_pool->getTimingBegin(),
-			e = arch_pool->getTimingEnd();
-			it != e;
-			++it)
+	// Modules with no higher level networks/mods are level 1
+	for (auto &module : modules)
 	{
-		// Get timing simulator
-		comm::Arch *arch = *it;
-		comm::Timing *timing = arch->getTiming();
-
-		// Traverse entries to memory hierarchy
-		for (int i = 0; i < timing->getNumEntryModules(); i++)
-		{
-			Module *module = timing->getEntryModule(i);
-			ConfigSetModuleLevel(module, 1);
-		}
+		if (module->getNumHighModules() == 0)
+			ConfigSetModuleLevel(module.get(), 1);
 	}
-
 	// Debug
 	debug << "Calculating module levels:\n";
 	for (auto &module : modules)
@@ -1486,21 +1341,7 @@ void System::ReadConfiguration()
 	// Load memory system configuration file. If no file name has been given
 	// by the user, create a default configuration for each architecture.
 	misc::IniFile ini_file;
-	if (config_file.empty())
-	{
-		// Create default configuration files for each architecture
-		comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
-		for (auto it = arch_pool->getTimingBegin(),
-				e = arch_pool->getTimingEnd();
-				it != e;
-				++it)
-		{
-			comm::Timing *timing = (*it)->getTiming();
-			assert(timing);
-			timing->WriteMemoryConfiguration(&ini_file);
-		}
-	}
-	else
+	if (!config_file.empty())
 	{
 		// Load from file
 		ini_file.Load(config_file);
@@ -1525,11 +1366,6 @@ void System::ReadConfiguration(misc::IniFile *ini_file)
 	// Read low level caches
 	ConfigReadLowModules(ini_file);
 
-	// Read entries from requesting devices (CPUs/GPUs) to memory system
-	// entries. This is presented in [Entry <name>] sections in the
-	// configuration file.
-	ConfigReadEntries(ini_file);
-
 	// Create switches in internal networks
 	ConfigCreateSwitches(ini_file);
 
@@ -1543,11 +1379,6 @@ void System::ReadConfiguration(misc::IniFile *ini_file)
 
 	// Check routes to low and high modules
 	ConfigCheckRoutes(ini_file);
-
-	// Check for disjoint memory hierarchies for different architectures.
-	// FIXME We don't know if device is fused until runtime, so we can't
-	// check this in advance.
-	// arch_for_each(mem_config_check_disjoint, NULL);
 
 	// Compute sub-block sizes, based on high modules. This function also
 	// initializes the directories in modules other than L1.
