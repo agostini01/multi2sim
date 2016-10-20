@@ -115,9 +115,9 @@ fi
 
 
 
-###############
-# Debug/Profile
-###############
+###################
+# Debug/Profile/VPI
+###################
 
 debug=false
 CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG -m32"
@@ -131,8 +131,8 @@ AC_ARG_ENABLE(debug,
 		
 		# Add flag '-Wno-error=deprecated-declarations' only if it is supported.
 		# This flag prevents warnings caused by newer GTK versions that would cause with -Werror
-		CXXFLAGS="-msse2 -std=gnu++0x -Wall -Werror -g -O0 -m32"
-		saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99 -m32"
+                CXXFLAGS="-msse2 -std=gnu++0x -Wall -Werror -g -O0 -m32"
+                saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99 -m32"
 		CFLAGS="-Wno-error=deprecated-declarations"
 		AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
 		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
@@ -154,6 +154,41 @@ AC_ARG_ENABLE(debug,
 ],
 [])
 AM_CONDITIONAL(ENABLE_DEBUG, test x$enable_debug = xyes)
+
+
+vpi=false
+AC_ARG_ENABLE(vpi,
+[  --enable-vpi    Turn on vpi interface],
+[
+        case "${enableval}" in
+        yes)
+                vpi=true
+
+                # Add flag '-Wno-error=deprecated-declarations' only if it is supported.
+                # This flag prevents warnings caused by newer GTK versions that would cause with -Werror
+                CXXFLAGS="-msse2 -std=gnu++0x -Wall -Werror -g -O0 -m32 -fPIC"
+                saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99 -m32 -fPIC"
+                CFLAGS="-Wno-error=deprecated-declarations"
+                AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
+                AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+                                [ AC_MSG_RESULT([yes]) ]
+                                [ saved_flags="$saved_flags -Wno-error=deprecated-declarations" ],
+                                [ AC_MSG_RESULT([no]) ]
+                        )
+                CFLAGS="$saved_flags"
+                enable_vpi="yes"
+                AC_SUBST([ENABLE_VPI], 1)
+                ;;
+        no)
+                enable_vpi="no"
+                ;;
+        *)
+                AC_MSG_ERROR(bad value ${enableval} for --enable-vpi)
+                ;;
+        esac
+],
+[])
+AM_CONDITIONAL(ENABLE_VPI, test x$enable_vpi = xyes)
 
 profile=false
 AC_ARG_ENABLE(profile,

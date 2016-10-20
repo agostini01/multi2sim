@@ -87,7 +87,7 @@ void m2s_initialize_register()
 PLI_INT32 m2s_initialize_calltf(PLI_BYTE8 *user_data)
 {
     vpi_printf("VPI::In m2s_initialize_calltf call\n");
-    Multi2Sim::getInstance().m2sInitialize();
+    Multi2Sim::getInstance().m2sInitialize("m2s --mem-debug debug-info.txt  --trace trace-info.gz --mem-report report-info.txt --mem-sim --mem-config mem-config");
     return(0);
 }
 

@@ -16,6 +16,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#include "m2s.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -32,6 +33,8 @@
 #include <lib/cpp/Terminal.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Trace.h>
+
+
 
 extern "C"
 {
@@ -93,7 +96,7 @@ long long m2s_loop_iterations = 0;
 //
 
 
-void WelcomeMessage(std::ostream &os)
+void Multi2Sim::WelcomeMessage(std::ostream &os)
 {
 	// Compute simulation ID
 	struct timeval tv;
@@ -120,7 +123,7 @@ void WelcomeMessage(std::ostream &os)
 }
 
 
-void RegisterOptions()
+void Multi2Sim::RegisterOptions()
 {
 	// Set error message
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -188,7 +191,7 @@ void RegisterOptions()
 }
 
 
-void ProcessOptions()
+void Multi2Sim::ProcessOptions()
 {
 	// Event-driven simulator debugger
 	if (!m2s_debug_esim.empty())
@@ -212,7 +215,7 @@ void ProcessOptions()
 }
 
 
-void MainLoop()
+void Multi2Sim::MainLoop()
 {
 // This part has to move to INIT too
 	// Activate signal handler
@@ -237,47 +240,47 @@ void MainLoop()
 }
 
 
-void DumpStatisticsSummary(std::ostream &os = std::cerr)
+void Multi2Sim::DumpStatisticsSummary(std::ostream &os = std::cerr)
 {
-	// No summary dumped if no simulation was run
-	if (m2s_loop_iterations < 2)
-		return;
-	
-	// Print in blue
-	misc::Terminal::Blue(os);
+        // No summary dumped if no simulation was run
+        if (m2s_loop_iterations < 2)
+                return;
 
-	// Header
-	os << '\n' << ";\n"
-			<< "; Simulation Statistics Summary\n"
-			<< ";\n"
-			<< "\n";
+        // Print in blue
+        misc::Terminal::Blue(os);
 
-	// Calculate real time in seconds
-	esim::Engine *esim_engine = esim::Engine::getInstance();
-	double time_in_seconds = (double) esim_engine->getRealTime() / 1.0e6;
+        // Header
+        os << '\n' << ";\n"
+                        << "; Simulation Statistics Summary\n"
+                        << ";\n"
+                        << "\n";
 
-	// General statistics
-	os << "[ General ]\n";
-	os << misc::fmt("RealTime = %.2f [s]\n", time_in_seconds);
-	os << "SimEnd = " << esim_engine->getFinishReason() << '\n';
+        // Calculate real time in seconds
+        esim::Engine *esim_engine = esim::Engine::getInstance();
+        double time_in_seconds = (double) esim_engine->getRealTime() / 1.0e6;
 
-	// General detailed simulation statistics
-	if (esim_engine->getTime())
-	{
-		long long cycles = esim_engine->getCycle();
-		os << misc::fmt("SimTime = %.2f [ns]\n", esim_engine->getTime() / 1000.0);
-		os << misc::fmt("Frequency = %d [MHz]\n", esim_engine->getFrequency());
-		os << misc::fmt("Cycles = %lld\n", cycles);
-	}
+        // General statistics
+        os << "[ General ]\n";
+        os << misc::fmt("RealTime = %.2f [s]\n", time_in_seconds);
+        os << "SimEnd = " << esim_engine->getFinishReason() << '\n';
 
-	// End
-	os << '\n';
+        // General detailed simulation statistics
+        if (esim_engine->getTime())
+        {
+                long long cycles = esim_engine->getCycle();
+                os << misc::fmt("SimTime = %.2f [ns]\n", esim_engine->getTime() / 1000.0);
+                os << misc::fmt("Frequency = %d [MHz]\n", esim_engine->getFrequency());
+                os << misc::fmt("Cycles = %lld\n", cycles);
+        }
 
-	// Reset terminal color
-	misc::Terminal::Reset(os);
+        // End
+        os << '\n';
+
+        // Reset terminal color
+        misc::Terminal::Reset(os);
 }
 
-void DumpReports()
+void Multi2Sim::DumpReports()
 {
 	// Dumping memory report
 	if (mem::System::hasInstance())
@@ -304,7 +307,7 @@ void DumpReports()
 }
 
 
-int MainProgram(int argc, char **argv)
+int Multi2Sim::MainProgram(int argc, char **argv)
 {
 	// Print welcome message in standard error output
 	WelcomeMessage(std::cerr);
@@ -380,13 +383,93 @@ int MainProgram(int argc, char **argv)
 }
 
 
+// Only called by the VPI
+void Multi2Sim::m2sInitialize(char input_arguments[])
+{
+    // Print welcome message in standard error output
+    WelcomeMessage(std::cerr);
+
+    // Read command line
+    RegisterOptions();
+    mem::Mmu::RegisterOptions();
+    mem::Manager::RegisterOptions();
+    mem::System::RegisterOptions();
+    dram::System::RegisterOptions();
+    net::System::RegisterOptions();
+
+    // FIXME must read from input arguments
+    char mystring [] ="m2s --mem-debug debug-info.txt  --trace trace-info.gz --mem-report report-info.txt --mem-sim --mem-config mem-config";
+
+    // Create the arrays to parse VPI input arguments
+    int* my_argc = (int*) malloc(sizeof(int));
+    char**my_argv = (char**)(malloc(strlen(mystring)*sizeof(char)));
+    getVpiArguments(my_argc, my_argv, mystring);
+
+    // Process command line. Return to C version of Multi2Sim if a
+    // command-line option was not recognized.
+    misc::CommandLine *command_line = misc::CommandLine::getInstance();
+    command_line->Process(*my_argc, my_argv, false);
+
+    // Process command line
+    ProcessOptions();
+    mem::Mmu::ProcessOptions();
+    mem::Manager::ProcessOptions();
+    mem::System::ProcessOptions();
+    dram::System::ProcessOptions();
+    net::System::ProcessOptions();
+
+    free(my_argc);
+    free(my_argv);
+
+}
+
+// Only called by the VPI
+void Multi2Sim::m2sReset()
+{
+    std::cout<<"M2S::vpiReset()"<<std::endl;
+}
+
+// Only called by the VPI
+void Multi2Sim::m2sFinalize()
+{
+    std::cout<<"M2S::vpiFinalize()"<<std::endl;
+}
+
+// Only called by the VPI
+void Multi2Sim::m2sAccess(const unsigned int &mod
+                         , const unsigned int &type
+                         , const unsigned int &address)
+{
+    std::cout<<"M2S::vpiAccess()"		<<std::endl
+             <<"\tmod = "	    << mod	<<std::endl
+             <<"\ttype = "    << type	<<std::endl
+             <<"\taddress = " << address	<<std::endl;
+}
+
+void Multi2Sim::m2sStep()
+{
+    std::cout<<"M2S::vpiStep()"<<std::endl;
+}
+
+
+// Only called by the VPI
+void Multi2Sim::LoadProgram(const std::vector<std::string> &arguments
+                           , const std::vector<std::string> &environment
+                           , const std::string &current_directory
+                           , const std::string &stdin_file_name
+                           , const std::string &stdout_file_name)
+{
+
+}
+
+
 int main(int argc, char **argv)
 {
 	// Main exception handler
 	try
 	{
 		// Run main program
-		return MainProgram(argc, argv);
+                return Multi2Sim::getInstance().MainProgram(argc, argv);
 	}
 	catch (misc::Exception &e)
 	{

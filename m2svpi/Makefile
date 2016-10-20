@@ -12,6 +12,7 @@ AM2S=/home/agostini/multi2sim/multi2sim/src/m2s.o
 AMEM=/home/agostini/multi2sim/multi2sim/src/memory/libmemory.a
 ANET=/home/agostini/multi2sim/multi2sim/src/network/libnetwork.a
 AVIS=/home/agostini/multi2sim/multi2sim/src/visual/common/libcommon.a
+ADRAM=/home/agostini/multi2sim/multi2sim/src/dram/libdram.a
 
 #ARCHs
 AARCHCOMMON=/home/agostini/multi2sim/multi2sim/src/arch/common/libcommon.a
@@ -56,7 +57,7 @@ $(ODIR)/%.o: %.cc $(DEPS)
 	$(CC) -c -g $(CFLAGS) -o $@ $< $(CPOSTFLAGS)
 
 $(TARGET): $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $^ -Wl,--start-group $(AESIM) $(ACPP) $(AMHAN) $(AUTIL) $(AMEM) $(ANET) $(AARCHS) $(AVIS) -Wl,--end-group $(LDPOSTFLAGS)
+	$(CC) $(LDFLAGS) -o $@ $^ -Wl,--start-group $(AESIM) $(ACPP) $(AMHAN) $(AUTIL) $(AMEM) $(ANET) $(AARCHS) $(AVIS) $(ADRAM) -Wl,--end-group $(LDPOSTFLAGS)
 
 #--make rule-------------------------------------------------------------------#
 #.PHONY: m2s

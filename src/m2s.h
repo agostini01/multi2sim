@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <lib/esim/Engine.h>
+#include <string.h>
 
 class Multi2Sim
 {
@@ -23,7 +24,7 @@ public:
     void WelcomeMessage(std::ostream &os);
 
     // Initialize multi2sim with the proper arguments
-    void m2sInitialize();
+    void m2sInitialize(char input_arguments[]);
 
     // Reset m2s bringing it to its initial state
     void m2sReset();
@@ -70,7 +71,7 @@ private:
     void MainLoop();
 
 
-    void DumpStatisticsSummary(std::ostream &os = std::cerr);
+    void DumpStatisticsSummary(std::ostream &os);
 
     void DumpReports();
 
@@ -534,6 +535,38 @@ private:
 		    "Source = n1\n"
 		    "Dest = s0\n";
 
+
+    ///
+    /// \brief getVpiArguments creates typical argc and argv from a char array
+    /// \param my_argc - int * to argc
+    /// \param my_argv - char ** to argv
+    /// \param mystring - input string
+    ///
+    /// It is necessary to allocate the pointers first, for this:
+    ///
+    ///     char mystring[] = "a string of input arguments"
+    ///     //...
+    ///     //...
+    ///     int* my_argc = (int*) malloc(sizeof(int));
+    ///     char**my_argv = (char**)(malloc(strlen(mystring)*sizeof(char)));
+    ///
+    void getVpiArguments(int* my_argc, char **my_argv, char *mystring)
+    {
+        char * pch;
+        *my_argc = 0;
+        pch = strtok (mystring," ");
+        my_argv[*my_argc] = pch;
+
+        while (pch != NULL)
+        {
+            ++*my_argc;
+            pch = strtok (NULL, " ");
+            my_argv[*my_argc] = pch;
+        }
+    }
+
 };
+
+
 
 #endif // M2S_H
