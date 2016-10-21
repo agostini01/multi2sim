@@ -37,7 +37,7 @@ http://dl.altera.com/?edition=lite > Updates (tab) > Complete Download (section)
 ~/multi2sim$ aclocal
 ~/multi2sim$ autoconf
 ~/multi2sim$ automake --add-missing
-~/multi2sim$ ./configure --enable-vpi
+~/multi2sim$ ./configure --enable-debug
 ~/multi2sim$ make`
 4. Navigate to `~/multi2sim/m2svpi` and edit the path for your multi2sim and modelsim_ase for all the entries
   * `IDIR =/home/USERNAME_HERE/altera_lite/16.0/modelsim_ase/include
