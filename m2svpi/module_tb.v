@@ -22,6 +22,12 @@ reg[256*8:0] string;
 
   addbit i1 (test[0], test[1], test[2], results[0], results[1]);
 
+	always
+	#5 result=$m2s_step();
+
+//	always
+	//#10 $m2s_access(1, 1, 8'hAA);
+
   initial
   begin
 
@@ -42,7 +48,8 @@ reg[256*8:0] string;
 //      #10 $show_all_signals(top.i1);
 //      end
       //      #10 $stop;
-      #10 $finish;
+   	  #10000 $m2s_finalize;
+      #10001 $finish;
       end
 
 initial
@@ -57,17 +64,19 @@ initial
 --mem-debug debug.mem \
 outM2S";
 
-    $display("%s", string);
+    //$display("%s", string);
 
     #1 $m2s_initialize;
     #1 $m2s_reset;
-    #1 result = $m2s_step();
-	$m2s_access(1, 0, 8'hAA);
-    #1 result = $m2s_step();
-	$m2s_access(1, 0, 8'hAA);
-    #1 $m2s_finalize;
+#10 $m2s_access(1, 1, 8'hAA);
+#50 $m2s_access(1, 1, 8'hAA);
+
     end
 endmodule
+
+
+
+
 
 
 

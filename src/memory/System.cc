@@ -470,6 +470,12 @@ void System::StandAlone()
 	esim_engine->Finish("MaxTime");
 }
 
+void System::StandAloneVPI()
+{
+
+
+}
+
 
 void System::DumpReport()
 {

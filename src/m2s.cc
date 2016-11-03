@@ -87,6 +87,8 @@ std::string m2s_visual_file;
 // Number of iterations in the main simulation loop
 long long m2s_loop_iterations = 0;
 
+int m2s_witness=-10000;
+
 
 
 
@@ -373,7 +375,7 @@ int Multi2Sim::MainProgram(int argc, char **argv)
 
 	// FIXME Statistics summary
 	// This is the *other* part of Finalize
-	DumpStatisticsSummary();
+        DumpStatisticsSummary();
 
 	// Reports
 	DumpReports();
@@ -418,6 +420,41 @@ void Multi2Sim::m2sInitialize(char input_arguments[])
     dram::System::ProcessOptions();
     net::System::ProcessOptions();
 
+    // Initialize memory system, only when '--mem-sim' command-line
+    // options have been processed.
+    mem::System *memory_system = mem::System::getInstance();
+    if (1)
+    {
+            // We need to load the network configuration file prior to
+            // parsing memory config file. The memory config file searches
+            // for the external network if it cannot find the network
+            // in the memory configuration file sections.
+            net::System *net_system = net::System::getInstance();
+            net_system->ReadConfiguration();
+
+            // Parse the memory configuration file
+            memory_system->ReadConfiguration();
+
+            // Memory stand alone
+            //memory_system->StandAlone();
+    }
+
+    // Initialize network system, only if the option --net-sim is used
+    if (1)
+    {
+            net::System *net_system = net::System::getInstance();
+            net_system->ReadConfiguration();
+            //net_system->StandAlone();
+    }
+
+    // Initialize dram system, only if the option --dram-sim is used
+    if (dram::System::isStandAlone())
+    {
+            dram::System *dram_system = dram::System::getInstance();
+            dram_system->ReadConfiguration();
+            dram_system->Run();
+    }
+
     free(my_argc);
     free(my_argv);
 
@@ -433,6 +470,18 @@ void Multi2Sim::m2sReset()
 void Multi2Sim::m2sFinalize()
 {
     std::cout<<"M2S::vpiFinalize()"<<std::endl;
+    esim::Engine *esim_engine = esim::Engine::getInstance();
+    // Lets finish all off
+    esim_engine->ProcessAllEvents();
+    // Here finish the esim
+    esim_engine->Finish("MaxTime");
+
+    // This is the *other* part of Finalize
+    //DumpStatisticsSummary();
+
+    // Reports
+    DumpReports();
+
 }
 
 // Only called by the VPI
@@ -444,11 +493,61 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
              <<"\tmod = "	    << mod	<<std::endl
              <<"\ttype = "    << type	<<std::endl
              <<"\taddress = " << address	<<std::endl;
+
+    // mod-l1-0
+    // Get the right module
+    mem::System *mem_system = mem::System::getInstance();
+    std::cout<<"Current cycle: "<<mem_system->getCycle()<<std::endl;
+
+    mem::Module *module = mem_system->getModule("mod-l1-0");
+     if(module == NULL)
+     {
+         std::cout<<"NUll pointer"<<std::endl;
+     }
+     else
+     {
+         // Send the packet
+         if (module->canAccess(address))
+         {
+             // Get the type of access based on the number
+             mem::Module::AccessType the_type = mem::Module::AccessInvalid;
+             switch (type) {
+             case 0:
+                 the_type = mem::Module::AccessInvalid;
+                 break;
+             case 1:
+                 the_type = mem::Module::AccessLoad;
+                 break;
+             case 2:
+                 the_type = mem::Module::AccessStore;
+                 break;
+             case 3:
+                 the_type = mem::Module::AccessNCStore;
+                 break;
+             default:
+                 the_type = mem::Module::AccessInvalid;
+                 break;
+             }
+
+             // Perform the access
+             module->Access(the_type, 0);
+
+         }
+
+     }
 }
 
 void Multi2Sim::m2sStep()
 {
     std::cout<<"M2S::vpiStep()"<<std::endl;
+
+    // Get current cycle and check max cycles
+    mem::System *mem_system = mem::System::getInstance();
+    std::cout<<"___ cycle "<<mem_system->getCycle()<<" ___"<<std::endl;
+
+    // Proccess events
+    esim::Engine *esim_engine = esim::Engine::getInstance();
+    esim_engine->ProcessEvents();
 }
 
 

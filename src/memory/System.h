@@ -252,13 +252,15 @@ class System
 	// Map of networks, indexed by their name
 	std::map<std::string, net::Network *> network_map;
 
-	// List of modules
-	std::list<std::unique_ptr<Module>> modules;
+
 
 	// Map of modules, indexed by their name
 	std::map<std::string, Module *> module_map;
 
+        // List of modules
+        std::list<std::unique_ptr<Module>> modules;
 public:
+
 
 	/// Constructor
 	System();
@@ -436,6 +438,7 @@ public:
 
 	/// Stand Alone simulation
 	void StandAlone();
+        void StandAloneVPI();
 
 
 

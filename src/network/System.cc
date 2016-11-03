@@ -321,7 +321,7 @@ void System::StandAlone()
 		throw Error(misc::fmt("%s: The network does not exist for "
 				"stand-alone simulation\n",
 				config_file.c_str()));
-	UniformTrafficSimulation(network);
+        // UniformTrafficSimulation(network);
 }
 
 
