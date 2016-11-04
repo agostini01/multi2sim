@@ -19,14 +19,21 @@ time       bar;
 reg  [32:0] result;
 reg         a, b;
 reg[256*8:0] string;
+reg[7:0] random;
 
   addbit i1 (test[0], test[1], test[2], results[0], results[1]);
 
 	always
+	begin
 	#5 result=$m2s_step();
+	end
 
-//	always
-	//#10 $m2s_access(1, 1, 8'hAA);
+	always
+	begin
+	random=$urandom_range(255,0);
+	#100 $m2s_access(1, 1, random);
+	//#4   $m2s_access(1, 1, (random=random+4));
+	end
 
   initial
   begin
@@ -68,8 +75,8 @@ outM2S";
 
     #1 $m2s_initialize;
     #1 $m2s_reset;
-#10 $m2s_access(1, 1, 8'hAA);
-#50 $m2s_access(1, 1, 8'hAA);
+	//#9 $m2s_access(1, 1, 8'hAA);
+	//#50 $m2s_access(1, 1, 8'hAA);
 
     end
 endmodule

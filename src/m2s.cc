@@ -87,8 +87,8 @@ std::string m2s_visual_file;
 // Number of iterations in the main simulation loop
 long long m2s_loop_iterations = 0;
 
-int m2s_witness=-10000;
 
+unsigned access_identifier=0;
 
 
 
@@ -305,7 +305,34 @@ void Multi2Sim::DumpReports()
 
 		// Dump the network routing table
 		net_system->DumpRoutes();
-	}
+        }
+}
+
+int Multi2Sim::checkProccessedEvents()
+{
+    total_witness=0; // Redundant way to check witness
+    std::map<int, a_access>::iterator it=accesses_list.begin();
+    while ( it!=accesses_list.end())
+    {
+        if(*it->second.access_witness==0)
+        {
+            // FIXME: Has to change VPI objects or pass information
+            std::cout << "Access id: "<<it->first
+                      << " to address " << it->second.access_address
+                      << " finished accessing"<< '\n';
+
+            free(it->second.access_witness);
+            accesses_list.erase(it++); // Erase and increment iterator to check next access
+        }
+        else
+        {
+            // Redundant way to check witness
+            total_witness = total_witness + *it->second.access_witness;
+            ++it;
+        }
+    }
+    // Success
+    return 0;
 }
 
 
@@ -529,8 +556,27 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
                  break;
              }
 
+             // new witness
+             int *current_witness = (int *)malloc(sizeof(int));
+
+             *current_witness = -1;
+             // Insert to access_map_list
+             a_access current_access = {
+                 access_identifier,
+                 address,
+                 the_type,
+                 "test",
+                 current_witness
+             };
+
+             accesses_list.emplace(access_identifier,current_access);
+
+
              // Perform the access
-             module->Access(the_type, 0);
+             module->Access(accesses_list.at(access_identifier).access_type
+                            ,accesses_list.at(access_identifier).access_address
+                            ,accesses_list.at(access_identifier).access_witness);
+             ++access_identifier;
 
          }
 
@@ -548,10 +594,12 @@ void Multi2Sim::m2sStep()
     // Proccess events
     esim::Engine *esim_engine = esim::Engine::getInstance();
     esim_engine->ProcessEvents();
+
+    // Give feedback to VPI interface
+    checkProccessedEvents();
 }
 
 
-// Only called by the VPI
 void Multi2Sim::LoadProgram(const std::vector<std::string> &arguments
                            , const std::vector<std::string> &environment
                            , const std::string &current_directory

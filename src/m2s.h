@@ -6,6 +6,8 @@
 #include <lib/esim/Engine.h>
 #include <string.h>
 
+#include <memory/System.h>
+
 class Multi2Sim
 {
 /*Singleton approach for this class-------------------------------------------*/
@@ -76,6 +78,27 @@ private:
     void DumpReports();
 
     void Cleanup();
+
+
+    // VPI specific
+    struct a_access
+    {
+        unsigned access_id;
+        unsigned access_address;
+        mem::Module::AccessType access_type;
+        const char* access_module_name;
+        int* access_witness;
+
+    };
+
+   // VPI specific
+   std::map<int, a_access> accesses_list;
+
+   //
+   int total_witness=-10000;
+
+
+   int checkProccessedEvents();
 
 
 
@@ -537,10 +560,14 @@ private:
 
 
     ///
-    /// \brief getVpiArguments creates typical argc and argv from a char array
-    /// \param my_argc - int * to argc
-    /// \param my_argv - char ** to argv
-    /// \param mystring - input string
+    /// \brief getVpiArguments
+    ///         creates typical argc and argv from a char array
+    /// \param my_argc
+    ///         int * to argc
+    /// \param my_argv
+    ///         char ** to argv
+    /// \param mystring
+    ///         input string
     ///
     /// It is necessary to allocate the pointers first, for this:
     ///
