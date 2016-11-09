@@ -1,24 +1,24 @@
 #Outside Dependency DIRS and Programs
-IDIR =/home/agostini/altera_lite/16.0/modelsim_ase/include
 MODELSIM=/home/agostini/altera_lite/16.0/modelsim_ase/linuxaloem
-MULTI2SIM=/home/agostini/multi2sim/multi2sim/src
+IDIR =$(MODELSIM)/../include
+MULTI2SIM=../src
 
 #M2S Libs
-AESIM=/home/agostini/multi2sim/multi2sim/src/lib/esim/libesim.a
-ACPP=/home/agostini/multi2sim/multi2sim/src/lib/cpp/libcpp.a
-AMHAN=/home/agostini/multi2sim/multi2sim/src/lib/mhandle/libmhandle.a
-AUTIL=/home/agostini/multi2sim/multi2sim/src/lib/util/libutil.a
-AM2S=/home/agostini/multi2sim/multi2sim/src/m2s.o
-AMEM=/home/agostini/multi2sim/multi2sim/src/memory/libmemory.a
-ANET=/home/agostini/multi2sim/multi2sim/src/network/libnetwork.a
-AVIS=/home/agostini/multi2sim/multi2sim/src/visual/common/libcommon.a
-ADRAM=/home/agostini/multi2sim/multi2sim/src/dram/libdram.a
+AESIM=$(MULTI2SIM)/lib/esim/libesim.a
+ACPP=$(MULTI2SIM)/lib/cpp/libcpp.a
+AMHAN=$(MULTI2SIM)/lib/mhandle/libmhandle.a
+AUTIL=$(MULTI2SIM)/lib/util/libutil.a
+AM2S=$(MULTI2SIM)/m2s.o
+AMEM=$(MULTI2SIM)/memory/libmemory.a
+ANET=$(MULTI2SIM)/network/libnetwork.a
+AVIS=$(MULTI2SIM)/visual/common/libcommon.a
+ADRAM=$(MULTI2SIM)/dram/libdram.a
 
 #ARCHs
-AARCHCOMMON=/home/agostini/multi2sim/multi2sim/src/arch/common/libcommon.a
-AARCHX86EMU=/home/agostini/multi2sim/multi2sim/src/arch/x86/emulator/libemulator.a
-AARCHX86DIS=/home/agostini/multi2sim/multi2sim/src/arch/x86/disassembler/libdisassembler.a
-AARCHX86TIM=/home/agostini/multi2sim/multi2sim/src/arch/x86/timing/libtiming.a
+AARCHCOMMON=$(MULTI2SIM)/arch/common/libcommon.a
+AARCHX86EMU=$(MULTI2SIM)/arch/x86/emulator/libemulator.a
+AARCHX86DIS=$(MULTI2SIM)/arch/x86/disassembler/libdisassembler.a
+AARCHX86TIM=$(MULTI2SIM)/arch/x86/timing/libtiming.a
 AARCHS=$(AARCHCOMMON) $(AARCHX86EMU) $(AARCHX86DIS) $(AARCHX86TIM)
 
 #Compiler options
