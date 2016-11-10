@@ -2,7 +2,7 @@
 
 #include <cstdlib>    /* ANSI C standard library */
 #include "vpi_user.h"  /* IEEE 1364 PLI VPI routine library  */
-#include "/home/agostini/multi2sim/multi2sim/src/m2s.h"
+#include <m2s.h>
 
 #if VPI_1995
 #include "../vpi_1995_compat.h"  /* kludge new Verilog-2001 routines */
