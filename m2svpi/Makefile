@@ -60,7 +60,7 @@ $(ODIR)/%.o: %.cc $(DEPS)
 	$(CC) -c -g $(CFLAGS) -o $@ $< $(CPOSTFLAGS)
 
 $(TARGET): $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $^ -Wl,--start-group $(AESIM) $(ACPP) $(AMHAN) $(AUTIL) $(AMEM) $(ANET) $(AARCHS) $(AVIS) $(ADRAM) -Wl,--end-group $(LDPOSTFLAGS)
+	$(CC) $(LDFLAGS) -o $@ $^ -Wl,--start-group $(AESIM) $(ACPP) $(AMHAN) $(AUTIL) $(AMEM) $(ANET) $(AVIS) $(ADRAM) -Wl,--end-group $(LDPOSTFLAGS)
 
 #--make rule-------------------------------------------------------------------#
 #.PHONY: m2s
