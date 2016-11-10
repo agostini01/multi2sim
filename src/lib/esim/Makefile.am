@@ -22,3 +22,8 @@ libesim_a_SOURCES = \
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
+if ENABLE_VPI
+AM_CPPFLAGS += -fPIC
+AM_LDFLAGS = -rdynamic -Bsymbolic
+endif
+
