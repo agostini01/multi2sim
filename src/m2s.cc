@@ -362,6 +362,7 @@ int MainProgram(int argc, char **argv)
 	{
 		dram::System *dram_system = dram::System::getInstance();
 		dram_system->ReadConfiguration();
+		// FIXME rename Run() to StandAlone()
 		dram_system->Run();
 	}
 	

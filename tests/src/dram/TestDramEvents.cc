@@ -806,4 +806,8 @@ TEST(TestSystemEvents, section_test_address_out_of_bounds)
 	EXPECT_REGEX_MATCH(misc::fmt("Invalid Address").c_str(),
 			message.c_str());
 }
+
+// FIXME add a test with a dram system with two or more number of controllers.
+// The aim of this test is to see if the controller is found based on the address
+// used, or whether we should identify which controller we are sending an access to
 }
