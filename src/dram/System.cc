@@ -330,9 +330,6 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 
 void System::Run()
 {
-	// Get the simulation engine.
-	esim::Engine *engine = esim::Engine::getInstance();
-
 	// FIXME implement a similar unifrom injection model as presented in 
 	// file src/memory/System,cc:StandAlone()
 	// Run a simulation with 1000 cycles.
@@ -346,78 +343,6 @@ void System::Run()
 	// 	6) randomly inject an access of type read/write (based on their ratio) and 
 	//		based on injection rate itself
 	// 7) exit gracefully, like dram-sim or net-sim
-
-	// Get current cycle and check max cycles
-	esim::Engine *esim_engine = esim::Engine::getInstance();
-
-	// Loop from the beginning to the end the simulation
-	while (witness < 0)
-	{
-		long long cycle = System::getInstance()->getCycle();
-		if (cycle >= max_cycles)
-			break;
-
-		// Traverse all nodes to check if some nodes need injection
-		for (int i = 0; i < (int) modules.size(); i++)
-		{
-			// Get the iterator to the module
-			auto it = modules.begin();
-			std::advance(it, i);
-
-			// Get the module
-			Module *module = it->get();
-
-			// If the module is not level 1, continue
-			if (module->getLevel() != 1)
-				continue;
-
-			// Check turn for next injection
-			if (inject_time[i] > cycle)
-				continue;
-
-			// Perform the access injection
-			while (inject_time[i] < cycle)
-			{
-				// Schedule next injection
-				inject_time[i] += net::System::RandomExponential(
-						injection_rate);
-
-				// Find a random address
-				unsigned random_address = random_generator(rng);
-
-				// Keep updating the random address until the
-				// cache module serves that address
-				while (module->ServesAddress(random_address) != true)
-					random_address = random_generator(rng);
-
-				// Send the packet
-				if (module->canAccess(random_address))
-				{
-					// Get the type of access based on the
-					// ratio
-					Module::AccessType type = random() <
-						ratio ? Module::AccessStore : 
-						Module::AccessLoad;
-
-					// Perform the access
-					module->Access(type, random_address,
-							&witness);
-
-				}
-			}
-		}
-
-		// Next cycle
-		debug << misc::fmt("___ cycle %lld ___\n", cycle);	
-		esim_engine->ProcessEvents();
-	}
-
-	// Lets finish all off
-	esim_engine->ProcessAllEvents();
-
-	// Here finish the esim
-	esim_engine->Finish("MaxTime");
-
 }
 
 
