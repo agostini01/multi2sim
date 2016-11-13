@@ -69,5 +69,10 @@ AM_CFLAGS = @GTK_CFLAGS@
 LDADD += @GTK_LIBS@
 endif
 
+if ENABLE_VPI
+AM_CPPFLAGS += -fPIC
+AM_LDFLAGS = -rdynamic -Bsymbolic
+endif
+
 LDADD += -lpthread -lz -lm -lstdc++ 
 
