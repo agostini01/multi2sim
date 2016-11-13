@@ -32,7 +32,14 @@ libcommon_a_SOURCES = \
 	\
 	visual-missing.c \
 	visual.h
+AM_CFLAGS=
 
 endif
 
 AM_CPPFLAGS = @M2S_INCLUDES@
+
+if ENABLE_VPI
+AM_CPPFLAGS += -fPIC
+AM_CFLAGS += -fPIC
+AM_LDFLAGS = -rdynamic -Bsymbolic
+endif
