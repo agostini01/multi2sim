@@ -39,7 +39,7 @@ std::string System::config_file;
 std::string System::debug_file;
 std::string System::report_file;
 bool System::help = false;
-bool System::sim_mem_stand_alone = false;
+
 int System::frequency = 1000;
 long long System::max_cycles = 100000;
 long long System::access_counts = 200;
@@ -54,6 +54,13 @@ esim::Trace System::trace;
 misc::Debug System::debug;
 
 std::unique_ptr<System> System::instance;
+
+
+bool System::sim_mem_vpi = false;
+bool System::sim_mem_stand_alone = false;
+
+// FIXME-MILO
+// Add flag to check if random injection was requested
 
 
 System *System::getInstance()
@@ -316,6 +323,14 @@ void System::RegisterOptions()
 	// Category
 	command_line->setCategory("Memory System");
 
+
+        // VPI simulator
+        command_line->RegisterBool("--mem-sim-vpi",
+                        sim_mem_vpi,
+                        "Runs a memory simulation using a input access, "
+                        "for the memory configuration file (option "
+                        "'--mem-config')");
+
 	// Stand-alone simulator
 	command_line->RegisterBool("--mem-sim",
 			sim_mem_stand_alone,
@@ -355,6 +370,12 @@ void System::RegisterOptions()
 			"coherency protocol in constant periods equal to the interval, "
 			"to examine its consistency and correctness. The simulation "
 			"fails if the correctness is not maintained.");
+
+
+        // FIXME-MILO
+        // Add command line option --mem_sim_trace <file>
+        // File path must be stored input_memory_trace_file
+        // command_line-> . . .
 }
 
 
@@ -372,13 +393,21 @@ void System::ProcessOptions()
 		throw Error(misc::fmt("Option --mem-sim requires "
 				" --mem-config option "));
 
+        // FIXME-MILO
+        // check for "stand alone" and trace file input. Throw error if something is missing
+
 	// Debug file
 	debug.setPath(debug_file);
 }
 
 
-void System::StandAlone()
+void System::RandomInjectionRun()
 {
+        // FIXME-MILO
+        // This is the function that must be called from the m2s.cc IF random injection
+        // for stand-alone memory was requested during command line.
+        // Delete these lines when you are done
+
 	// Random Number generation setup
 	std::random_device rd;	
 	std::mt19937 rng(rd());
@@ -468,12 +497,6 @@ void System::StandAlone()
 
 	// Here finish the esim
 	esim_engine->Finish("MaxTime");
-}
-
-void System::StandAloneVPI()
-{
-
-
 }
 
 

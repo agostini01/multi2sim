@@ -77,6 +77,9 @@ std::string m2s_trace_file;
 // Visualization tool input file
 std::string m2s_visual_file;
 
+// FIXME-MILO
+// Declare the input memory trace file string
+
 
 
 
@@ -190,6 +193,16 @@ void Multi2Sim::RegisterOptions()
 			"in a previous simulation. This option is only "
 			"available on systems with support for GTK 3.0 or "
 			"higher.");
+
+
+
+
+        // Register the remaining options
+        mem::Mmu::RegisterOptions();
+        mem::Manager::RegisterOptions();
+        mem::System::RegisterOptions();
+        dram::System::RegisterOptions();
+        net::System::RegisterOptions();
 }
 
 
@@ -213,6 +226,19 @@ void Multi2Sim::ProcessOptions()
 	// Visualization
 	if (!m2s_visual_file.empty())
 		visual_run(m2s_visual_file.c_str());
+
+
+        // FIXME-MILO
+        // Check if input memory trace file name is not empty
+        // if not empty: call TO BE DECIDED
+
+
+        // Process the remaining options
+        mem::Mmu::ProcessOptions();
+        mem::Manager::ProcessOptions();
+        mem::System::ProcessOptions();
+        dram::System::ProcessOptions();
+        net::System::ProcessOptions();
 		
 }
 
@@ -343,11 +369,6 @@ int Multi2Sim::MainProgram(int argc, char **argv)
 
 	// Read command line
 	RegisterOptions();
-	mem::Mmu::RegisterOptions();
-	mem::Manager::RegisterOptions();
-	mem::System::RegisterOptions();
-	dram::System::RegisterOptions();
-	net::System::RegisterOptions();
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
@@ -355,12 +376,7 @@ int Multi2Sim::MainProgram(int argc, char **argv)
 	command_line->Process(argc, argv, false);
 	
 	// Process command line
-	ProcessOptions();
-	mem::Mmu::ProcessOptions();
-	mem::Manager::ProcessOptions();
-	mem::System::ProcessOptions();
-	dram::System::ProcessOptions();
-	net::System::ProcessOptions();
+        ProcessOptions();
 
 	// Initialize memory system, only when '--mem-sim' command-line 
 	// options have been processed.
@@ -378,7 +394,7 @@ int Multi2Sim::MainProgram(int argc, char **argv)
 		memory_system->ReadConfiguration();
 
 		// Memory stand alone
-		memory_system->StandAlone();
+                memory_system->RandomInjectionRun();
 	}
 
 	// Initialize network system, only if the option --net-sim is used
@@ -386,7 +402,7 @@ int Multi2Sim::MainProgram(int argc, char **argv)
 	{
 		net::System *net_system = net::System::getInstance();
 		net_system->ReadConfiguration();
-		net_system->StandAlone();
+                net_system->StandAlone();
 	}
 
 	// Initialize dram system, only if the option --dram-sim is used
@@ -420,11 +436,11 @@ void Multi2Sim::m2sInitialize(char input_arguments[])
 
     // Read command line
     RegisterOptions();
-    mem::Mmu::RegisterOptions();
-    mem::Manager::RegisterOptions();
-    mem::System::RegisterOptions();
-    dram::System::RegisterOptions();
-    net::System::RegisterOptions();
+//    mem::Mmu::RegisterOptions();
+//    mem::Manager::RegisterOptions();
+//    mem::System::RegisterOptions();
+//    dram::System::RegisterOptions();
+//    net::System::RegisterOptions();
 
     // FIXME must read from input arguments
     char mystring [] ="m2s --mem-debug debug-info.txt  --trace trace-info.gz --mem-report report-info.txt --mem-sim --mem-config mem-config";
@@ -441,11 +457,11 @@ void Multi2Sim::m2sInitialize(char input_arguments[])
 
     // Process command line
     ProcessOptions();
-    mem::Mmu::ProcessOptions();
-    mem::Manager::ProcessOptions();
-    mem::System::ProcessOptions();
-    dram::System::ProcessOptions();
-    net::System::ProcessOptions();
+//    mem::Mmu::ProcessOptions();
+//    mem::Manager::ProcessOptions();
+//    mem::System::ProcessOptions();
+//    dram::System::ProcessOptions();
+//    net::System::ProcessOptions();
 
     // Initialize memory system, only when '--mem-sim' command-line
     // options have been processed.
@@ -561,7 +577,7 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
 
              *current_witness = -1;
              // Insert to access_map_list
-             a_access current_access = {
+             mem::a_access current_access = {
                  access_identifier,
                  address,
                  the_type,
@@ -569,13 +585,13 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
                  current_witness
              };
 
-             accesses_list.emplace(access_identifier,current_access);
+             mem_system->accesses_list.emplace(access_identifier,current_access);
 
 
              // Perform the access
-             module->Access(accesses_list.at(access_identifier).access_type
-                            ,accesses_list.at(access_identifier).access_address
-                            ,accesses_list.at(access_identifier).access_witness);
+             module->Access(mem_system->accesses_list.at(access_identifier).access_type
+                            ,mem_system->accesses_list.at(access_identifier).access_address
+                            ,mem_system->accesses_list.at(access_identifier).access_witness);
              ++access_identifier;
 
          }

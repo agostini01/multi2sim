@@ -39,6 +39,16 @@ namespace mem
 {
 
 
+struct a_access
+{
+    unsigned access_id;
+    unsigned access_address;
+    mem::Module::AccessType access_type;
+    const char* access_module_name;
+    int* access_witness;
+
+};
+
 // Forward declarations
 class Module;
 
@@ -79,8 +89,14 @@ class System
 	// Show memory configuration file
 	static bool help;
 
+        // VPI simulator instantiator
+        static bool sim_mem_vpi;
+
 	// Stand-alone simulator instantiator
 	static bool sim_mem_stand_alone;
+
+        // Stand-alone simulator instantiator
+        static bool sim_mem_stand_alone_random;
 
 	// Message to display with '--mem-help'
 	static const std::string help_message;
@@ -312,6 +328,13 @@ public:
 	/// Returns whether we are running as a stand alone simulator.
 	static bool isStandAlone() { return sim_mem_stand_alone; }
 
+        /// Returns whether we are running as the VPI simulator.
+        static bool isVPIsimulation() { return sim_mem_vpi; }
+
+        /// Returns whether we are running random injection mode for stand alone simulator.
+        // FIXME-MILO
+        // implement the return
+
 	/// Returns true if the instance exists
 	static bool hasInstance() { return instance.get(); }
 
@@ -319,6 +342,29 @@ public:
 	static void Destroy() { instance = nullptr; }
 	
 
+
+        // STAND ALONE SPECIFIC
+        // After handling lines lie
+        // cycle module_name type address data identifier
+        // where data and identifier is optional
+        void access(const unsigned int &mod
+                                 , const unsigned int &type
+                                 , const unsigned int &address);
+
+        void access(const unsigned int &mod
+                                 , const unsigned int &type
+                                 , const unsigned int &address
+                                 , const unsigned int &data);
+
+        void step();
+
+        // STAND ALONE SPECIFIC
+        // FIXME
+        // Has to go to private and be accessed by a public function
+
+
+       // STAND ALONE SPECIFIC
+       std::map<int, a_access> accesses_list;
 
 
 	//
@@ -413,7 +459,7 @@ public:
 
 
 
-	//
+        //
 	// Configuration
 	//
 
@@ -437,11 +483,7 @@ public:
 	//
 
 	/// Stand Alone simulation
-	void StandAlone();
-        void StandAloneVPI();
-
-
-
+        void RandomInjectionRun();
 
 
 	// 
