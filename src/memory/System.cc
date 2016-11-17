@@ -58,10 +58,8 @@ std::unique_ptr<System> System::instance;
 
 bool System::sim_mem_vpi = false;
 bool System::sim_mem_stand_alone = false;
-
-// FIXME-MILO
-// Add flag to check if random injection was requested
-
+bool System::sim_mem_stand_alone_random = false;
+std::string System::input_memory_trace_file;
 
 System *System::getInstance()
 {
@@ -371,13 +369,17 @@ void System::RegisterOptions()
 			"to examine its consistency and correctness. The simulation "
 			"fails if the correctness is not maintained.");
 
+        // Option trace file
+        command_line->RegisterString("--mem-sim-trace <file>", input_memory_trace_file,
+                        "Trace file containing sequential list of inputs to access. "
+                        "Used alongside '--mem-sim'.");
 
-        // FIXME-MILO
-        // Add command line option --mem_sim_trace <file>
-        // File path must be stored input_memory_trace_file
-        // command_line-> . . .
+        // Option random injection
+        command_line->RegisterBool("--mem-sim-random ",
+                        sim_mem_stand_alone_random,
+                        "Run random injections instead of a trace file. "
+                        "Used alongside '--mem-sim'.");
 }
-
 
 void System::ProcessOptions()
 {
@@ -393,8 +395,17 @@ void System::ProcessOptions()
 		throw Error(misc::fmt("Option --mem-sim requires "
 				" --mem-config option "));
 
-        // FIXME-MILO
-        // check for "stand alone" and trace file input. Throw error if something is missing
+        if (sim_mem_stand_alone
+            && !sim_mem_stand_alone_random
+            && input_memory_trace_file.empty())
+                throw Error(misc::fmt("Option --mem-sim require option "
+                                      "--mem-sim-trace or --mem-sim-random"));
+
+        if (sim_mem_stand_alone
+            && sim_mem_stand_alone_random
+            && !input_memory_trace_file.empty())
+                throw Error(misc::fmt("Cannot use both options --mem-sim-trace "
+                                      "and --mem-sim-random"));
 
 	// Debug file
 	debug.setPath(debug_file);
@@ -403,11 +414,6 @@ void System::ProcessOptions()
 
 void System::RandomInjectionRun()
 {
-        // FIXME-MILO
-        // This is the function that must be called from the m2s.cc IF random injection
-        // for stand-alone memory was requested during command line.
-        // Delete these lines when you are done
-
 	// Random Number generation setup
 	std::random_device rd;	
 	std::mt19937 rng(rd());
@@ -497,6 +503,12 @@ void System::RandomInjectionRun()
 
 	// Here finish the esim
 	esim_engine->Finish("MaxTime");
+}
+
+void System::TraceFileRun()
+{
+        // TODO: implement trace file parsing etc..
+        throw Error("trace file format parsing unimplemented");
 }
 
 

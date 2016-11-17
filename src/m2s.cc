@@ -77,10 +77,6 @@ std::string m2s_trace_file;
 // Visualization tool input file
 std::string m2s_visual_file;
 
-// FIXME-MILO
-// Declare the input memory trace file string
-
-
 
 
 //
@@ -226,12 +222,6 @@ void Multi2Sim::ProcessOptions()
 	// Visualization
 	if (!m2s_visual_file.empty())
 		visual_run(m2s_visual_file.c_str());
-
-
-        // FIXME-MILO
-        // Check if input memory trace file name is not empty
-        // if not empty: call TO BE DECIDED
-
 
         // Process the remaining options
         mem::Mmu::ProcessOptions();
@@ -394,7 +384,14 @@ int Multi2Sim::MainProgram(int argc, char **argv)
 		memory_system->ReadConfiguration();
 
 		// Memory stand alone
-                memory_system->RandomInjectionRun();
+                if (memory_system->isRandomInjectionMode())
+                {
+                        memory_system->RandomInjectionRun();
+                }
+                else if (memory_system->isUsingTraceFile())
+                {
+                        memory_system->TraceFileRun();
+                }
 	}
 
 	// Initialize network system, only if the option --net-sim is used
