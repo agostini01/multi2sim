@@ -51,7 +51,7 @@ int System::message_size = 1;
 
 double System::injection_rate = 0.001;
 
-bool System::stand_alone = false;
+bool System::sim_net_stand_alone = false;
 
 bool System::help = false;
 
@@ -202,10 +202,10 @@ void System::ProcessOptions()
 
 	// Stand-Alone activation
 	if (!sim_net_name.empty())
-		stand_alone = true;
+                sim_net_stand_alone = true;
 
 	// Stand-Alone requires config file
-	if (stand_alone && config_file.empty())
+        if (sim_net_stand_alone && config_file.empty())
 		throw Error(misc::fmt("Option --net-sim requires "
 				" --net-config option "));
 }
@@ -225,7 +225,7 @@ void System::ReadConfiguration()
 		// trace, since we have a configuration file, but the trace
 		// will be updated only if the traceSystem is active as well.
 		trace.On();
-		if ((trace) && (stand_alone))
+                if ((trace) && (sim_net_stand_alone))
 			TraceHeader();
 	}
 }
@@ -310,7 +310,7 @@ void System::UniformTrafficSimulation(Network *network)
 	esim_engine->Finish("MaxTime");
 }
 
-void System::StandAlone()
+void System::StandAloneRun()
 {
 	// Generate a uniform traffic pattern on the network.
 	// Later, this function can be easily extended (via a switch)

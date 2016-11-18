@@ -334,32 +334,7 @@ void Multi2Sim::DumpReports()
         }
 }
 
-int Multi2Sim::checkProccessedEvents()
-{
-    total_witness=0; // Redundant way to check witness
-    std::map<int, a_access>::iterator it=accesses_list.begin();
-    while ( it!=accesses_list.end())
-    {
-        if(*it->second.access_witness==0)
-        {
-            // FIXME: Has to change VPI objects or pass information
-            std::cout << "Access id: "<<it->first
-                      << " to address " << it->second.access_address
-                      << " finished accessing"<< '\n';
 
-            free(it->second.access_witness);
-            accesses_list.erase(it++); // Erase and increment iterator to check next access
-        }
-        else
-        {
-            // Redundant way to check witness
-            total_witness = total_witness + *it->second.access_witness;
-            ++it;
-        }
-    }
-    // Success
-    return 0;
-}
 
 
 int Multi2Sim::MainProgram(int argc, char **argv)
@@ -380,7 +355,6 @@ int Multi2Sim::MainProgram(int argc, char **argv)
 
 	// Initialize memory system, only when '--mem-sim' command-line 
 	// options have been processed.
-	mem::System *memory_system = mem::System::getInstance();
 	if (mem::System::isStandAlone())
 	{
 		// We need to load the network configuration file prior to
@@ -391,6 +365,7 @@ int Multi2Sim::MainProgram(int argc, char **argv)
 		net_system->ReadConfiguration();
 
 		// Parse the memory configuration file
+                mem::System *memory_system = mem::System::getInstance();
 		memory_system->ReadConfiguration();
 
 		// Memory stand alone
@@ -402,7 +377,7 @@ int Multi2Sim::MainProgram(int argc, char **argv)
 	{
 		net::System *net_system = net::System::getInstance();
 		net_system->ReadConfiguration();
-                net_system->StandAlone();
+                net_system->StandAloneRun();
 	}
 
 	// Initialize dram system, only if the option --dram-sim is used
@@ -436,14 +411,9 @@ void Multi2Sim::m2sInitialize(char input_arguments[])
 
     // Read command line
     RegisterOptions();
-//    mem::Mmu::RegisterOptions();
-//    mem::Manager::RegisterOptions();
-//    mem::System::RegisterOptions();
-//    dram::System::RegisterOptions();
-//    net::System::RegisterOptions();
 
     // FIXME must read from input arguments
-    char mystring [] ="m2s --mem-debug debug-info.txt  --trace trace-info.gz --mem-report report-info.txt --mem-sim --mem-config mem-config";
+    char mystring [] ="m2s --mem-debug debug-info.txt  --trace trace-info.gz --mem-report report-info.txt --mem-sim-vpi --mem-config mem-config";
 
     // Create the arrays to parse VPI input arguments
     int* my_argc = (int*) malloc(sizeof(int));
@@ -457,16 +427,14 @@ void Multi2Sim::m2sInitialize(char input_arguments[])
 
     // Process command line
     ProcessOptions();
-//    mem::Mmu::ProcessOptions();
-//    mem::Manager::ProcessOptions();
-//    mem::System::ProcessOptions();
-//    dram::System::ProcessOptions();
-//    net::System::ProcessOptions();
 
-    // Initialize memory system, only when '--mem-sim' command-line
+
+
+    // FIXME Throw error if I have more than one option set
+    // Initialize memory system, only when '--mem-sim-vpi' command-line
     // options have been processed.
-    mem::System *memory_system = mem::System::getInstance();
-    if (1)
+
+    if (mem::System::isStandAloneVPI())
     {
             // We need to load the network configuration file prior to
             // parsing memory config file. The memory config file searches
@@ -476,18 +444,38 @@ void Multi2Sim::m2sInitialize(char input_arguments[])
             net_system->ReadConfiguration();
 
             // Parse the memory configuration file
+            mem::System *memory_system = mem::System::getInstance();
+            memory_system->ReadConfiguration();
+
+    }
+
+
+    // Initialize memory system, only when '--mem-sim' command-line
+    // options have been processed.
+
+    if (mem::System::isStandAlone())
+    {
+            // We need to load the network configuration file prior to
+            // parsing memory config file. The memory config file searches
+            // for the external network if it cannot find the network
+            // in the memory configuration file sections.
+            net::System *net_system = net::System::getInstance();
+            net_system->ReadConfiguration();
+
+            // Parse the memory configuration file
+            mem::System *memory_system = mem::System::getInstance();
             memory_system->ReadConfiguration();
 
             // Memory stand alone
-            //memory_system->StandAlone();
+            memory_system->RandomInjectionRun();
     }
 
     // Initialize network system, only if the option --net-sim is used
-    if (1)
+    if (net::System::isStandAlone())
     {
             net::System *net_system = net::System::getInstance();
             net_system->ReadConfiguration();
-            //net_system->StandAlone();
+            net_system->StandAloneRun();
     }
 
     // Initialize dram system, only if the option --dram-sim is used
@@ -513,11 +501,11 @@ void Multi2Sim::m2sReset()
 void Multi2Sim::m2sFinalize()
 {
     std::cout<<"M2S::vpiFinalize()"<<std::endl;
-    esim::Engine *esim_engine = esim::Engine::getInstance();
-    // Lets finish all off
-    esim_engine->ProcessAllEvents();
-    // Here finish the esim
-    esim_engine->Finish("MaxTime");
+
+
+    // Get the object to the memory
+    mem::System *mem_system = mem::System::getInstance();
+    mem_system->Finalize();
 
     // This is the *other* part of Finalize
     //DumpStatisticsSummary();
@@ -539,80 +527,24 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
 
     // mod-l1-0
     // Get the right module
+    // FIX-ME Always the module number 0
     mem::System *mem_system = mem::System::getInstance();
-    std::cout<<"Current cycle: "<<mem_system->getCycle()<<std::endl;
+    mem_system->Access(0,type,address);
 
-    mem::Module *module = mem_system->getModule("mod-l1-0");
-     if(module == NULL)
-     {
-         std::cout<<"NUll pointer"<<std::endl;
-     }
-     else
-     {
-         // Send the packet
-         if (module->canAccess(address))
-         {
-             // Get the type of access based on the number
-             mem::Module::AccessType the_type = mem::Module::AccessInvalid;
-             switch (type) {
-             case 0:
-                 the_type = mem::Module::AccessInvalid;
-                 break;
-             case 1:
-                 the_type = mem::Module::AccessLoad;
-                 break;
-             case 2:
-                 the_type = mem::Module::AccessStore;
-                 break;
-             case 3:
-                 the_type = mem::Module::AccessNCStore;
-                 break;
-             default:
-                 the_type = mem::Module::AccessInvalid;
-                 break;
-             }
-
-             // new witness
-             int *current_witness = (int *)malloc(sizeof(int));
-
-             *current_witness = -1;
-             // Insert to access_map_list
-             mem::a_access current_access = {
-                 access_identifier,
-                 address,
-                 the_type,
-                 "test",
-                 current_witness
-             };
-
-             mem_system->accesses_list.emplace(access_identifier,current_access);
-
-
-             // Perform the access
-             module->Access(mem_system->accesses_list.at(access_identifier).access_type
-                            ,mem_system->accesses_list.at(access_identifier).access_address
-                            ,mem_system->accesses_list.at(access_identifier).access_witness);
-             ++access_identifier;
-
-         }
-
-     }
 }
 
 void Multi2Sim::m2sStep()
 {
     std::cout<<"M2S::vpiStep()"<<std::endl;
 
-    // Get current cycle and check max cycles
+    // Get the object
     mem::System *mem_system = mem::System::getInstance();
+
+    // Print cycle information when access is done
     std::cout<<"___ cycle "<<mem_system->getCycle()<<" ___"<<std::endl;
 
-    // Proccess events
-    esim::Engine *esim_engine = esim::Engine::getInstance();
-    esim_engine->ProcessEvents();
-
-    // Give feedback to VPI interface
-    checkProccessedEvents();
+    // Perform the step
+    mem_system->Step();
 }
 
 

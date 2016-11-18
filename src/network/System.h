@@ -89,7 +89,7 @@ class System
 	static double injection_rate;
 
 	// Stand-alone simulator instantiator
-	static bool stand_alone;
+        static bool sim_net_stand_alone;
 
 	// Unique instance of singleton
 	static std::unique_ptr<System> instance;
@@ -190,7 +190,7 @@ public:
 	static void ProcessOptions();
 
 	/// Returns whether we are running as a stand alone simulator.
-	static bool isStandAlone() { return stand_alone; }
+        static bool isStandAlone() { return sim_net_stand_alone; }
 
 	/// Return the message size for stand-alone simulation, as configured
 	/// by the user.
@@ -246,7 +246,7 @@ public:
 	void UniformTrafficSimulation(Network *network);
 
 	// Stand-Alone simulation
-	void StandAlone();
+        void StandAloneRun();
 
 	// Get the number of networks
 	int getNumNetworks() const { return networks.size(); }

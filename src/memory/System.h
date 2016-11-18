@@ -98,6 +98,12 @@ class System
         // Stand-alone simulator instantiator
         static bool sim_mem_stand_alone_random;
 
+        // Access_identifier
+        static unsigned int access_identifier;
+
+        // Total witness
+        static unsigned int total_witness;
+
 	// Message to display with '--mem-help'
 	static const std::string help_message;
 
@@ -325,9 +331,6 @@ public:
 	/// Obtain singleton instance.
 	static System *getInstance();
 
-	/// Returns whether we are running as a stand alone simulator.
-	static bool isStandAlone() { return sim_mem_stand_alone; }
-
         /// Returns whether we are running as the VPI simulator.
         static bool isVPIsimulation() { return sim_mem_vpi; }
 
@@ -342,20 +345,6 @@ public:
 	static void Destroy() { instance = nullptr; }
 	
 
-
-        // STAND ALONE SPECIFIC
-        // After handling lines lie
-        // cycle module_name type address data identifier
-        // where data and identifier is optional
-        void access(const unsigned int &mod
-                                 , const unsigned int &type
-                                 , const unsigned int &address);
-
-        void access(const unsigned int &mod
-                                 , const unsigned int &type
-                                 , const unsigned int &address
-                                 , const unsigned int &data);
-
         void step();
 
         // STAND ALONE SPECIFIC
@@ -364,7 +353,7 @@ public:
 
 
        // STAND ALONE SPECIFIC
-       std::map<int, a_access> accesses_list;
+       static std::map<int, a_access> accesses_list;
 
 
 	//
@@ -482,9 +471,32 @@ public:
 	// Memory Stand Alone
 	//
 
-	/// Stand Alone simulation
+        /// Returns whether we are running as a stand alone simulator.
+        static bool isStandAlone() { return sim_mem_stand_alone; }
+
+        /// Returns whether we are running as a stand alone simulator.
+        static bool isStandAloneVPI() { return sim_mem_vpi; }
+
+        /// Stand Alone simulation with Random Injection
         void RandomInjectionRun();
 
+
+        // STAND ALONE SPECIFIC
+        // After handling lines like
+        // cycle module_name type address data identifier
+        // where data and identifier is optional
+        void Access(const unsigned int &mod
+                                 , const unsigned int &type
+                                 , const unsigned int &address);
+
+        int Step();
+
+        int Finalize();
+
+
+private:
+        int checkProccessedEvents();
+public:
 
 	// 
 	// Memory report

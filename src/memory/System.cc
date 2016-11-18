@@ -58,6 +58,9 @@ std::unique_ptr<System> System::instance;
 
 bool System::sim_mem_vpi = false;
 bool System::sim_mem_stand_alone = false;
+unsigned int System::access_identifier = 0;
+unsigned int System::total_witness =0;
+std::map<int, a_access> System::accesses_list;
 
 // FIXME-MILO
 // Add flag to check if random injection was requested
@@ -71,7 +74,7 @@ System *System::getInstance()
 
 	// Create instance
 	instance = misc::new_unique<System>();
-	return instance.get();
+        return instance.get();
 }
 
 
@@ -388,6 +391,12 @@ void System::ProcessOptions()
 		exit(0);
 	}
 
+        // Stand-Alone VPI requires config file
+        if (sim_mem_vpi && config_file.empty())
+                throw Error(misc::fmt("Option --mem-sim-vpi requires "
+                                " --mem-config option "));
+
+
 	// Stand-Alone requires config file
 	if (sim_mem_stand_alone && config_file.empty())
 		throw Error(misc::fmt("Option --mem-sim requires "
@@ -499,85 +508,199 @@ void System::RandomInjectionRun()
 	esim_engine->Finish("MaxTime");
 }
 
+void System::Access(const unsigned int &mod, const unsigned int &type, const unsigned int &address)
+{
+    std::string module_name ="mod-l1-";
+    module_name.append(std::to_string(mod));
+    mem::Module *module = getModule(module_name);
+
+    if(module == NULL)
+    {
+        std::cout<<"NUll pointer"<<std::endl;
+    }
+    else
+    {
+        // Send the packet
+        if (module->canAccess(address))
+        {
+            // Get the type of access based on the number
+            mem::Module::AccessType the_type = mem::Module::AccessInvalid;
+            switch (type) {
+            case 0:
+                the_type = mem::Module::AccessInvalid;
+                break;
+            case 1:
+                the_type = mem::Module::AccessLoad;
+                break;
+            case 2:
+                the_type = mem::Module::AccessStore;
+                break;
+            case 3:
+                the_type = mem::Module::AccessNCStore;
+                break;
+            default:
+                the_type = mem::Module::AccessInvalid;
+                break;
+            }
+
+            // new witness
+            int *current_witness = (int *)malloc(sizeof(int));
+
+
+            *current_witness = -1;
+            // Insert to access_map_list
+            a_access current_access = {
+                access_identifier,
+                address,
+                the_type,
+                "test",
+                current_witness
+            };
+            accesses_list.emplace(access_identifier,current_access);
+
+
+            // Perform the access
+            module->Access( accesses_list.at(access_identifier).access_type
+                            ,accesses_list.at(access_identifier).access_address
+                            ,accesses_list.at(access_identifier).access_witness);
+            ++access_identifier;
+        }
+    }
+}
+
+
+int System::Step()
+{
+    // Proccess events
+    esim::Engine *esim_engine = esim::Engine::getInstance();
+    esim_engine->ProcessEvents();
+
+    // update the access map table
+    checkProccessedEvents();
+
+    return 0;
+}
+
+
+
+int System::checkProccessedEvents()
+{
+
+    total_witness=0; // Redundant way to check witness
+    std::map<int, mem::a_access>::iterator it=accesses_list.begin();
+    while ( it!=accesses_list.end())
+    {
+        if(*it->second.access_witness==0)
+        {
+
+            // FIXME: Has to change VPI objects or pass information
+            std::cout << "============ Access id: "<<it->first
+                      << " to address " << it->second.access_address
+                      << " finished accessing ============="<< '\n';
+
+            free(it->second.access_witness);
+            accesses_list.erase(it++); // Erase and increment iterator to check next access
+        }
+        else
+        {
+            // Redundant way to check witness
+            total_witness = total_witness + *it->second.access_witness;
+            ++it;
+        }
+    }
+    // Success
+    return 0;
+}
+
+int System::Finalize(){
+    esim::Engine *esim_engine = esim::Engine::getInstance();
+    // Lets finish all off
+    esim_engine->ProcessAllEvents();
+    // Here finish the esim
+    esim_engine->Finish("MaxTime");
+
+    return 0;
+}
+
 
 void System::DumpReport()
 {
-	// Dump report files
-	if (!report_file.empty())
-	{
-		// Try to open the file
-		std::ofstream f(report_file);
-		if (!f)
-			throw Error(misc::fmt("%s: cannot open file for write",
-					report_file.c_str()));
-		
-		// Dump the memory report
-		DumpReport(f);
+    // Dump report files
+    if (!report_file.empty())
+    {
+        // Try to open the file
+        std::ofstream f(report_file);
+        if (!f)
+            throw Error(misc::fmt("%s: cannot open file for write",
+                                  report_file.c_str()));
 
-		// For every internal network report in the same file
-		for (auto &network : networks)
-			network->DumpReport(f);
-	}
+        // Dump the memory report
+        DumpReport(f);
+
+        // For every internal network report in the same file
+        for (auto &network : networks)
+            network->DumpReport(f);
+    }
 }
 
 
 void System::DumpReport(std::ostream &os) const
 {
-	// Dump introduction to the memory report file
-	os << "; Report for caches, TLBs, and main memory\n";
-	os << ";    Accesses - Total number of accesses - "
-			"Reads, Writes, and NCWrites (non-coherent) \n";
-	os << ";    Hits, Misses - Accesses resulting in hits/misses\n";
-	os << ";    HitRatio - Hits divided by accesses\n";
-	os << ";    Evictions - Invalidated or replaced cache blocks\n";
-	os << ";    Retries - For L1 caches, accesses that were retried\n";
-	os << ";    ReadRetries, WriteRetries, NCWriteRetries - Read/Write"
-			" retried accesses\n";
-	os << ";    Reads, Writes, NCWrites - Total read/write accesses\n";
-	os << ";    BlockingReads, BlockingWrites, BlockingNCWrites - "
-			"Reads/writes coming from lower-level cache\n";
-	os << ";    NonBlockingReads, NonBlockingWrites, NonBlockingNCWrites -"
-			" Coming from upper-level cache\n";
-	os << "\n\n";
-	
-	// Dump report for each module
-	for (auto &module : modules)
-		module->DumpReport(os);
+    // Dump introduction to the memory report file
+    os << "; Report for caches, TLBs, and main memory\n";
+    os << ";    Accesses - Total number of accesses - "
+          "Reads, Writes, and NCWrites (non-coherent) \n";
+    os << ";    Hits, Misses - Accesses resulting in hits/misses\n";
+    os << ";    HitRatio - Hits divided by accesses\n";
+    os << ";    Evictions - Invalidated or replaced cache blocks\n";
+    os << ";    Retries - For L1 caches, accesses that were retried\n";
+    os << ";    ReadRetries, WriteRetries, NCWriteRetries - Read/Write"
+          " retried accesses\n";
+    os << ";    Reads, Writes, NCWrites - Total read/write accesses\n";
+    os << ";    BlockingReads, BlockingWrites, BlockingNCWrites - "
+          "Reads/writes coming from lower-level cache\n";
+    os << ";    NonBlockingReads, NonBlockingWrites, NonBlockingNCWrites -"
+          " Coming from upper-level cache\n";
+    os << "\n\n";
+
+    // Dump report for each module
+    for (auto &module : modules)
+        module->DumpReport(os);
 }
 
 
 void System::SanityCheck()
 {
-	//
-	// Top down Rules
-	//
+    //
+    // Top down Rules
+    //
 
-	// Get the blocks of each module in the highest level
-	for (auto &module : modules)
-	{
-		// Get the associated cache
-		Cache *cache = module->getCache();
+    // Get the blocks of each module in the highest level
+    for (auto &module : modules)
+    {
+        // Get the associated cache
+        Cache *cache = module->getCache();
 
-		// Get every block of the cache
-		for (unsigned set = 0; set < cache->getNumSets(); set++)
-		{
-			for (unsigned way = 0; way < cache->getNumWays(); way++)
-			{
-				// Get the block
-				Cache::Block *block = cache->getBlock(set,way);
-				
-				// If the block is not valid, continue
-				if (block->getState() == Cache::BlockInvalid)
-					continue;
+        // Get every block of the cache
+        for (unsigned set = 0; set < cache->getNumSets(); set++)
+        {
+            for (unsigned way = 0; way < cache->getNumWays(); way++)
+            {
+                // Get the block
+                Cache::Block *block = cache->getBlock(set,way);
 
-				// Get the lower module for the top-down rules
-				Module *lower_module = module->
-						getLowModuleServingAddress(
-						block->getTag());
-				int lower_set;
-				int lower_way;
-				int lower_tag;
-				Cache::BlockState lower_state = Cache::BlockInvalid;
+                // If the block is not valid, continue
+                if (block->getState() == Cache::BlockInvalid)
+                    continue;
+
+                // Get the lower module for the top-down rules
+                Module *lower_module = module->
+                        getLowModuleServingAddress(
+                            block->getTag());
+                int lower_set;
+                int lower_way;
+                int lower_tag;
+                Cache::BlockState lower_state = Cache::BlockInvalid;
 				module->FindBlock(block->getTag(),
 						lower_set,
 						lower_way,
