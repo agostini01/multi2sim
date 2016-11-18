@@ -70,7 +70,7 @@ $(TARGET): $(OBJ)
 
 .PHONY: clean
 clean:
-	rm -f -r $(ODIR)/*.o *.sl work *~ transcript
+	rm -f -r $(ODIR)/*.o *.sl work *~ transcript *debug-info.txt *report-info.txt  *trace-info.gz
 
 .PHONY: load
 load:
