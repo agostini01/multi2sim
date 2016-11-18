@@ -104,6 +104,9 @@ class System
         // Total witness
         static unsigned int total_witness;
 
+        // Stand-alone simulator trace file
+        static std::string input_memory_trace_file;
+
 	// Message to display with '--mem-help'
 	static const std::string help_message;
 
@@ -335,8 +338,10 @@ public:
         static bool isVPIsimulation() { return sim_mem_vpi; }
 
         /// Returns whether we are running random injection mode for stand alone simulator.
-        // FIXME-MILO
-        // implement the return
+        static bool isRandomInjectionMode() { return sim_mem_stand_alone_random; }
+
+        /// Returns if we are using a trace file for the stand along simulator.
+        static bool isUsingTraceFile() { return !input_memory_trace_file.empty(); }
 
 	/// Returns true if the instance exists
 	static bool hasInstance() { return instance.get(); }
@@ -479,6 +484,7 @@ public:
 
         /// Stand Alone simulation with Random Injection
         void RandomInjectionRun();
+        void TraceFileRun();
 
 
         // STAND ALONE SPECIFIC

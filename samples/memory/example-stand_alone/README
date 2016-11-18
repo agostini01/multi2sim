@@ -1,1 +1,1 @@
-../../../bin/m2s --mem-debug debug-info.txt  --trace trace-info.gz --mem-report report-info.txt --mem-sim --mem-config mem-config
+../../../bin/m2s --mem-debug debug-info.txt  --trace trace-info.gz --mem-report report-info.txt --mem-sim --mem-sim-random --mem-config mem-config
