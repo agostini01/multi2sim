@@ -630,8 +630,115 @@ int System::Finalize(){
 
 void System::TraceFileRun()
 {
-        // TODO: implement trace file parsing etc..
-        throw Error("trace file format parsing unimplemented");
+        if (input_memory_trace_file.empty())
+                return;
+
+        const auto& input_file_path = input_memory_trace_file;
+        std::ifstream input_file(input_file_path);
+        if (!input_file)
+                throw Error(misc::fmt("%s: cannot open file for read",
+                                      input_file_path.c_str()));
+
+        // parse trace file into this vector
+        /* trace file format:
+           ----------------
+           trace_file ::= line *
+           line ::= comment | module | access
+
+           comment ::= '#' ...
+           module ::= 'module' INT
+           access ::= [ cycle ] addr type [ id ]
+
+           cycle ::= '+' INT
+           type ::= INT
+           addr ::= INT
+           id ::= INT
+        */
+        struct TraceLine {
+                unsigned int type, address;
+                unsigned int module;
+                unsigned int delta;
+
+                inline TraceLine (unsigned int t, unsigned int a,
+                                  unsigned int m, unsigned int d) :
+                        type(t), address(a), module(m), delta(d)
+                {
+                }
+        };
+        std::vector<TraceLine> accesses;
+
+        const unsigned int NO_MODULE = (unsigned int) -1;
+        unsigned int access_module = NO_MODULE;
+        misc::StringError str_err;
+
+        unsigned int line_num;
+        for (line_num = 0; !input_file.eof(); line_num++)
+        {
+                std::string line;
+                std::getline(input_file, line);
+                misc::StringTrim(line);
+
+                // comment or empty line
+                if (line.empty()
+                    || line[0] == '#')
+                        continue;
+
+                // tokenize words
+                std::vector<std::string> words;
+                misc::StringTokenize(line, words);
+                if (words.empty())
+                        continue;
+
+                // 'module' MODULE
+                if (words[0] == "module") {
+                        access_module = misc::StringToInt(words[1], str_err);
+                        if (str_err != misc::StringErrorOK) break;
+                        continue;
+                }
+
+                // '+' DELTA
+                unsigned int delta = 1; // default: 1
+                std::size_t j = 0;
+                if (words[0][0] == '+') {
+                        j = 1;
+                        delta = misc::StringToInt(words[0].substr(1), str_err);
+                        if (str_err != misc::StringErrorOK) break;
+                }
+
+                if ((words.size() - j) < 2)
+                        throw Error(misc::fmt("invalid trace file: line %d: "
+                                              "expected access address and type",
+                                              line_num));
+
+                // type addr
+                unsigned int type = misc::StringToInt(words[j], str_err);
+                if (str_err != misc::StringErrorOK) break;
+                unsigned int address = misc::StringToInt(words[j+1], str_err);
+                if (str_err != misc::StringErrorOK) break;
+
+                if (access_module == NO_MODULE)
+                        throw Error(misc::fmt("invalid trace file: line %d: "
+                                              "no module specified",
+                                              line_num));
+
+                accesses.emplace_back(type, address, access_module, delta);
+        }
+
+        if (str_err != misc::StringErrorOK)
+                throw Error(misc::fmt("invalid trace file: line %d: "
+                                      "invalid number format",
+                                      line_num));
+
+        // run the parsed trace file
+        for (auto& acc : accesses)
+        {
+                for (unsigned int t = 0; t < acc.delta; t++)
+                        Step();
+                Access(acc.module, acc.type, acc.address);
+        }
+
+        // finish
+        Finalize();
 }
 
 
