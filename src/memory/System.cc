@@ -643,36 +643,33 @@ void System::TraceFileRun()
         /* trace file format:
            ----------------
            trace_file ::= line *
-           line ::= comment | module | access
+           line ::= comment | delay | access
 
-           comment ::= '#' ...
-           module ::= 'module' INT
-           access ::= [ cycle ] addr type [ id ]
+           delay ::= 'wait' INT
+           access ::= module addr type [ id ]
 
-           cycle ::= '+' INT
+           module ::= INT
            type ::= INT
            addr ::= INT
            id ::= INT
         */
         struct TraceLine {
                 unsigned int type, address;
-                unsigned int module;
-                unsigned int delta;
+                unsigned int module, cycle;
 
                 inline TraceLine (unsigned int t, unsigned int a,
-                                  unsigned int m, unsigned int d) :
-                        type(t), address(a), module(m), delta(d)
+                                  unsigned int m, unsigned int c) :
+                        type(t), address(a), module(m), cycle(c)
                 {
                 }
         };
         std::vector<TraceLine> accesses;
+        unsigned int cycle = 0;
 
-        const unsigned int NO_MODULE = (unsigned int) -1;
-        unsigned int access_module = NO_MODULE;
         misc::StringError str_err;
-
         unsigned int line_num;
-        for (line_num = 0; !input_file.eof(); line_num++)
+
+        for (line_num = 1; !input_file.eof(); line_num++)
         {
                 std::string line;
                 std::getline(input_file, line);
@@ -689,39 +686,36 @@ void System::TraceFileRun()
                 if (words.empty())
                         continue;
 
-                // 'module' MODULE
-                if (words[0] == "module") {
-                        access_module = misc::StringToInt(words[1], str_err);
+                // 'wait' DELTA
+                if (words[0] == "wait") {
+                        if (words.size() < 2)
+                                throw Error(misc::fmt("invalid trace file: line %d: "
+                                                      "expected delay time",
+                                                      line_num));
+                        int delta = misc::StringToInt(words[1], str_err);
                         if (str_err != misc::StringErrorOK) break;
+                        if (delta < 0)
+                                throw Error(misc::fmt("invalid trace file: line %d: "
+                                                      "negative cycles",
+                                                      line_num));
+                        cycle += delta;
                         continue;
                 }
 
-                // '+' DELTA
-                unsigned int delta = 1; // default: 1
-                std::size_t j = 0;
-                if (words[0][0] == '+') {
-                        j = 1;
-                        delta = misc::StringToInt(words[0].substr(1), str_err);
-                        if (str_err != misc::StringErrorOK) break;
-                }
-
-                if ((words.size() - j) < 2)
+                if (words.size() != 3)
                         throw Error(misc::fmt("invalid trace file: line %d: "
-                                              "expected access address and type",
+                                              "expected three numbers per line",
                                               line_num));
 
                 // type addr
-                unsigned int type = misc::StringToInt(words[j], str_err);
+                unsigned int module = misc::StringToInt(words[0], str_err);
                 if (str_err != misc::StringErrorOK) break;
-                unsigned int address = misc::StringToInt(words[j+1], str_err);
+                unsigned int type = misc::StringToInt(words[1], str_err);
+                if (str_err != misc::StringErrorOK) break;
+                unsigned int address = misc::StringToInt(words[2], str_err);
                 if (str_err != misc::StringErrorOK) break;
 
-                if (access_module == NO_MODULE)
-                        throw Error(misc::fmt("invalid trace file: line %d: "
-                                              "no module specified",
-                                              line_num));
-
-                accesses.emplace_back(type, address, access_module, delta);
+                accesses.emplace_back(type, address, module, cycle);
         }
 
         if (str_err != misc::StringErrorOK)
@@ -730,10 +724,15 @@ void System::TraceFileRun()
                                       line_num));
 
         // run the parsed trace file
+        cycle = 0;
         for (auto& acc : accesses)
         {
-                for (unsigned int t = 0; t < acc.delta; t++)
+                // wait for correct cycle #
+                while (cycle < acc.cycle)
+                {
                         Step();
+                        cycle++;
+                }
                 Access(acc.module, acc.type, acc.address);
         }
 
