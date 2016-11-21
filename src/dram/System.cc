@@ -181,7 +181,7 @@ int System::getCapacity()
 
 void System::RegisterOptions()
 {
-/*
+
 	//
 	// FIXME: These options are removed, in order to be excluded from
 	// the m2s --help. However, later when we hook up the DRAM model to
@@ -231,13 +231,23 @@ void System::RegisterOptions()
 			"Runs a DRAM simulation using the actions provided "
 			"in the DRAM configuration file (option "
 			"'--dram-config').");
-*/
+
+	// FIXME add an option to read the read/write ratio
+	// --dram-read-write-ratio
+
+	// FIXME add an option to set the access count
+	// --dram-access-count
+
+	// FIXME add an option to set the injection rate
+	// --dram-injection-rate
+
+	// FIXME add an option for max cycle
+	// --dram-max-cycle
 }
 
 
 void System::ProcessOptions()
 {
-/*
 	// DRAM help
 	if (help)
 	{
@@ -257,7 +267,6 @@ void System::ProcessOptions()
 	if (stand_alone && config_file.empty())
 		throw Error(misc::fmt("Option --dram-sim requires "
 				" --dram-config option "));
-*/
 }
 
 
@@ -321,14 +330,19 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 
 void System::Run()
 {
-	// Get the simulation engine.
-	esim::Engine *engine = esim::Engine::getInstance();
-
+	// FIXME implement a similar unifrom injection model as presented in 
+	// file src/memory/System,cc:StandAlone()
 	// Run a simulation with 1000 cycles.
-	for (int i = 0; i < 1000; i++)
-	{
-		engine->ProcessEvents();
-	}
+
+	// 1) Random Number generation setup for the address
+	// 2) get the number of events that has to be created
+	// 3) get the cycle
+	// 4) loop forever
+	// 	5) exit only if dram-max-cycle is reached, or all events are processed
+	// 	and we reached the dram-access-count
+	// 	6) randomly inject an access of type read/write (based on their ratio) and 
+	//		based on injection rate itself
+	// 7) exit gracefully, like dram-sim or net-sim
 }
 
 

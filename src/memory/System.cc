@@ -18,6 +18,8 @@
  */
 
 #include <fstream>
+#include <cmath>
+#include <random>
 
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
@@ -37,7 +39,13 @@ std::string System::config_file;
 std::string System::debug_file;
 std::string System::report_file;
 bool System::help = false;
+bool System::sim_mem_stand_alone = false;
 int System::frequency = 1000;
+long long System::max_cycles = 100000;
+long long System::access_counts = 200;
+double System::injection_rate = 0.001;
+double System::ratio = 0.2;
+
 long long System::sanity_check_interval = 0;
 long long System::last_sanity_check = 0;
 
@@ -308,6 +316,13 @@ void System::RegisterOptions()
 	// Category
 	command_line->setCategory("Memory System");
 
+	// Stand-alone simulator
+	command_line->RegisterBool("--mem-sim",
+			sim_mem_stand_alone,
+			"Runs a memory simulation using a command trace or input access, "
+			"for the memory configuration file (option "
+			"'--mem-config')");
+
 	// Debug information
 	command_line->RegisterString("--mem-debug <file>", debug_file,
 			"Debug information related with the memory system, "
@@ -352,8 +367,107 @@ void System::ProcessOptions()
 		exit(0);
 	}
 
+	// Stand-Alone requires config file
+	if (sim_mem_stand_alone && config_file.empty())
+		throw Error(misc::fmt("Option --mem-sim requires "
+				" --mem-config option "));
+
 	// Debug file
 	debug.setPath(debug_file);
+}
+
+
+void System::StandAlone()
+{
+	// Random Number generation setup
+	std::random_device rd;	
+	std::mt19937 rng(rd());
+	std::uniform_int_distribution<unsigned> random_generator(0, 0xfffff);
+
+	// Number of modules in level 1
+	int l1_caches = 0;
+
+	// Get the number of modules in the level 1
+	for (auto &module : modules)
+		if (module->getLevel() == 1)
+			l1_caches++;
+
+	// Initiate a list of double for injection time
+	auto inject_time = misc::new_unique_array<double>(l1_caches);
+
+	// Set the witness value to the number of events
+	int witness = -1 * access_counts;
+
+	// Get current cycle and check max cycles
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+
+	// Loop from the beginning to the end the simulation
+	while (witness < 0)
+	{
+		long long cycle = System::getInstance()->getCycle();
+		if (cycle >= max_cycles)
+			break;
+
+		// Traverse all nodes to check if some nodes need injection
+		for (int i = 0; i < (int) modules.size(); i++)
+		{
+			// Get the iterator to the module
+			auto it = modules.begin();
+			std::advance(it, i);
+
+			// Get the module
+			Module *module = it->get();
+
+			// If the module is not level 1, continue
+			if (module->getLevel() != 1)
+				continue;
+
+			// Check turn for next injection
+			if (inject_time[i] > cycle)
+				continue;
+
+			// Perform the access injection
+			while (inject_time[i] < cycle)
+			{
+				// Schedule next injection
+				inject_time[i] += net::System::RandomExponential(
+						injection_rate);
+
+				// Find a random address
+				unsigned random_address = random_generator(rng);
+
+				// Keep updating the random address until the
+				// cache module serves that address
+				while (module->ServesAddress(random_address) != true)
+					random_address = random_generator(rng);
+
+				// Send the packet
+				if (module->canAccess(random_address))
+				{
+					// Get the type of access based on the
+					// ratio
+					Module::AccessType type = random() <
+						ratio ? Module::AccessStore : 
+						Module::AccessLoad;
+
+					// Perform the access
+					module->Access(type, random_address,
+							&witness);
+
+				}
+			}
+		}
+
+		// Next cycle
+		debug << misc::fmt("___ cycle %lld ___\n", cycle);	
+		esim_engine->ProcessEvents();
+	}
+
+	// Lets finish all off
+	esim_engine->ProcessAllEvents();
+
+	// Here finish the esim
+	esim_engine->Finish("MaxTime");
 }
 
 

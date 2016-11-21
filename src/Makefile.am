@@ -61,7 +61,7 @@ LDADD = \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 if ENABLE_DEBUG
-AM_LDFLAGS = -rdynamic
+AM_LDFLAGS = -rdynamic -Bsymbolic
 endif
 
 if HAVE_GTK
@@ -69,5 +69,5 @@ AM_CFLAGS = @GTK_CFLAGS@
 LDADD += @GTK_LIBS@
 endif
 
-LDADD += -lpthread -lz -lm -lstdc++
+LDADD += -lpthread -lz -lm -lstdc++ 
 

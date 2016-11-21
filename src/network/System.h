@@ -104,9 +104,6 @@ class System
 	static const int trace_version_major;
 	static const int trace_version_minor;
 
-	// Get a exponential random valueclass Network;
-	static double RandomExponential(double lambda);
-
 
 
 
@@ -199,6 +196,9 @@ public:
 	/// by the user.
 	static int getMessageSize() { return message_size; }
 
+	// Get a exponential random valueclass Network;
+	static double RandomExponential(double lambda);
+
 
 
 
@@ -248,12 +248,15 @@ public:
 	// Stand-Alone simulation
 	void StandAlone();
 
-    int getNumNetworks() const { return networks.size(); }
+	// Get the number of networks
+	int getNumNetworks() const { return networks.size(); }
 
-    Network *getNetwork(int index) const {
-        assert(index >= 0 && index < (int) networks.size());
-        return networks[index].get();
-    }
+	// Get a network by its index
+	Network *getNetwork(int index) const {
+		assert(index >= 0 && index < (int) networks.size());
+		return networks[index].get();
+	}
+
 };
 
 }  // namespace net
