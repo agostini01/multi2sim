@@ -643,20 +643,16 @@ void System::TraceFileRun()
         /* trace file format:
            ----------------
            trace_file ::= line *
-           line ::= comment | delay | access
-
-           delay ::= 'wait' INT
-           access ::= module addr type [ id ]
-
+           line ::= access | '#' ...
+           access ::= [ delay ] module type addr
+           delay ::= '+'INT
            module ::= INT
            type ::= INT
            addr ::= INT
-           id ::= INT
         */
         struct TraceLine {
                 unsigned int type, address;
                 unsigned int module, cycle;
-
                 inline TraceLine (unsigned int t, unsigned int a,
                                   unsigned int m, unsigned int c) :
                         type(t), address(a), module(m), cycle(c)
@@ -665,7 +661,6 @@ void System::TraceFileRun()
         };
         std::vector<TraceLine> accesses;
         unsigned int cycle = 0;
-
         misc::StringError str_err;
         unsigned int line_num;
 
@@ -679,42 +674,50 @@ void System::TraceFileRun()
                 if (line.empty()
                     || line[0] == '#')
                         continue;
-
                 // tokenize words
                 std::vector<std::string> words;
                 misc::StringTokenize(line, words);
                 if (words.empty())
                         continue;
 
-                // 'wait' DELTA
-                if (words[0] == "wait") {
-                        if (words.size() < 2)
-                                throw Error(misc::fmt("invalid trace file: line %d: "
-                                                      "expected delay time",
-                                                      line_num));
-                        int delta = misc::StringToInt(words[1], str_err);
+                // position of "module" identifier in words
+                // e.g.  +1 2 1 0x1000    mod_pos = 1
+                //          ^
+                //       2 2 0x2000       mod_pos = 0
+                //       ^
+                unsigned int mod_pos = 0;
+
+                // parse "+DELAY"
+                if (words[0].size() > 1 && words[0][0] == '+') {
+                        mod_pos = 1;
+
+                        int delay = misc::StringToInt(words[0], str_err);
                         if (str_err != misc::StringErrorOK) break;
-                        if (delta < 0)
+                        if (delay < 0)
                                 throw Error(misc::fmt("invalid trace file: line %d: "
-                                                      "negative cycles",
+                                                      "invalid negative cycles",
                                                       line_num));
-                        cycle += delta;
-                        continue;
+                        cycle += delay;
                 }
 
-                if (words.size() != 3)
+                // check # of words
+                if (words.size() > (mod_pos + 3))
                         throw Error(misc::fmt("invalid trace file: line %d: "
-                                              "expected three numbers per line",
+                                              "too many integers on line",
+                                              line_num));
+                if (words.size() < (mod_pos + 3))
+                        throw Error(misc::fmt("invalid trace file: line %d: "
+                                              "missing some parameters on line",
                                               line_num));
 
-                // type addr
-                unsigned int module = misc::StringToInt(words[0], str_err);
+                // parse "MOD TYPE ADDR"
+                unsigned int module = misc::StringToInt(words[mod_pos], str_err);
                 if (str_err != misc::StringErrorOK) break;
-                unsigned int type = misc::StringToInt(words[1], str_err);
+                unsigned int type = misc::StringToInt(words[mod_pos + 1], str_err);
                 if (str_err != misc::StringErrorOK) break;
-                unsigned int address = misc::StringToInt(words[2], str_err);
+                unsigned int address = misc::StringToInt(words[mod_pos + 2], str_err);
                 if (str_err != misc::StringErrorOK) break;
-
+                // insert into list
                 accesses.emplace_back(type, address, module, cycle);
         }
 
@@ -735,7 +738,6 @@ void System::TraceFileRun()
                 }
                 Access(acc.module, acc.type, acc.address);
         }
-
         // finish
         Finalize();
 }
