@@ -574,6 +574,46 @@ void System::Access(const unsigned int &mod, const unsigned int &type, const uns
     }
 }
 
+void System::Access(const unsigned int &mod, const mem::Module::AccessType& type, const unsigned int &address)
+{
+    std::string module_name ="mod-l1-";
+    module_name.append(std::to_string(mod));
+    mem::Module *module = getModule(module_name);
+
+    if(module == NULL)
+    {
+        std::cout<<"NUll pointer"<<std::endl;
+    }
+    else
+    {
+        // Send the packet
+        if (module->canAccess(address))
+        {
+
+            // new witness
+            int *current_witness = (int *)malloc(sizeof(int));
+
+
+            *current_witness = -1;
+            // Insert to access_map_list
+            a_access current_access = {
+                access_identifier,
+                address,
+                type,
+                "test",
+                current_witness
+            };
+            accesses_list.emplace(access_identifier,current_access);
+
+
+            // Perform the access
+            module->Access( accesses_list.at(access_identifier).access_type
+                            ,accesses_list.at(access_identifier).access_address
+                            ,accesses_list.at(access_identifier).access_witness);
+            ++access_identifier;
+        }
+    }
+}
 
 int System::Step()
 {
@@ -630,8 +670,116 @@ int System::Finalize(){
 
 void System::TraceFileRun()
 {
-        // TODO: implement trace file parsing etc..
-        throw Error("trace file format parsing unimplemented");
+        if (input_memory_trace_file.empty())
+                return;
+
+        const auto& input_file_path = input_memory_trace_file;
+        std::ifstream input_file(input_file_path);
+        if (!input_file)
+                throw Error(misc::fmt("%s: cannot open file for read",
+                                      input_file_path.c_str()));
+
+        // parse trace file into this vector
+        /* trace file format:
+           ----------------
+           trace_file ::= line *
+           line ::= access | '#' ...
+           access ::= [ delay ] module type addr
+           delay ::= '+'INT
+           module ::= INT
+           type ::= INT
+           addr ::= INT
+        */
+        struct TraceLine {
+                unsigned int type, address;
+                unsigned int module, cycle;
+                inline TraceLine (unsigned int t, unsigned int a,
+                                  unsigned int m, unsigned int c) :
+                        type(t), address(a), module(m), cycle(c)
+                {
+                }
+        };
+        std::vector<TraceLine> accesses;
+        unsigned int cycle = 0;
+        misc::StringError str_err;
+        unsigned int line_num;
+
+        for (line_num = 1; !input_file.eof(); line_num++)
+        {
+                std::string line;
+                std::getline(input_file, line);
+                misc::StringTrim(line);
+
+                // comment or empty line
+                if (line.empty()
+                    || line[0] == '#')
+                        continue;
+                // tokenize words
+                std::vector<std::string> words;
+                misc::StringTokenize(line, words);
+                if (words.empty())
+                        continue;
+
+                // position of "module" identifier in words
+                // e.g.  +1 2 1 0x1000    mod_pos = 1
+                //          ^
+                //       2 2 0x2000       mod_pos = 0
+                //       ^
+                unsigned int mod_pos = 0;
+
+                // parse "+DELAY"
+                if (words[0].size() > 1 && words[0][0] == '+') {
+                        mod_pos = 1;
+
+                        int delay = misc::StringToInt(words[0], str_err);
+                        if (str_err != misc::StringErrorOK) break;
+                        if (delay < 0)
+                                throw Error(misc::fmt("invalid trace file: line %d: "
+                                                      "invalid negative cycles",
+                                                      line_num));
+                        cycle += delay;
+                }
+
+                // check # of words
+                if (words.size() > (mod_pos + 3))
+                        throw Error(misc::fmt("invalid trace file: line %d: "
+                                              "too many integers on line",
+                                              line_num));
+                if (words.size() < (mod_pos + 3))
+                        throw Error(misc::fmt("invalid trace file: line %d: "
+                                              "missing some parameters on line",
+                                              line_num));
+
+                // parse "MOD TYPE ADDR"
+                unsigned int module = misc::StringToInt(words[mod_pos], str_err);
+                if (str_err != misc::StringErrorOK) break;
+                unsigned int type = misc::StringToInt(words[mod_pos + 1], str_err);
+                if (str_err != misc::StringErrorOK) break;
+                unsigned int address = misc::StringToInt(words[mod_pos + 2], str_err);
+                if (str_err != misc::StringErrorOK) break;
+                // insert into list
+                accesses.emplace_back(type, address, module, cycle);
+        }
+
+        if (str_err != misc::StringErrorOK)
+                throw Error(misc::fmt("invalid trace file: line %d: "
+                                      "invalid number format",
+                                      line_num));
+
+        // run the parsed trace file
+        cycle = 0;
+        for (auto& acc : accesses)
+        {
+                // wait for correct cycle #
+                while (cycle < acc.cycle)
+                {
+                        Step();
+                        cycle++;
+                }
+                Access(acc.module, acc.type, acc.address);
+        }
+        // finish
+        Finalize();
 }
 
 
