@@ -14,7 +14,7 @@ def main ():
     with open(TRACE_FILE, "w+") as trace_file:
         for addr in xrange(MIN_ADDR, MAX_ADDR, SEPARATED_BY):
             for mod in MODULES:
-                inp = [ format(DELAY, "+"), str(mod), str(ACCESS_TYPE), format(addr, "X") ]
+                inp = [ str(DELAY), str(mod), str(ACCESS_TYPE), hex(addr) ]
                 trace_file.write(" ".join(inp) + "\n")
 
 if __name__ == "__main__":
