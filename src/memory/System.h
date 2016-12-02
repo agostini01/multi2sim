@@ -495,6 +495,9 @@ public:
                                  , const unsigned int &type
                                  , const unsigned int &address);
 
+        void Access(const unsigned int &mod
+                                 , const mem::Module::AccessType& type
+                                 , const unsigned int &address);
         int Step();
 
         int Finalize();

@@ -574,6 +574,46 @@ void System::Access(const unsigned int &mod, const unsigned int &type, const uns
     }
 }
 
+void System::Access(const unsigned int &mod, const mem::Module::AccessType& type, const unsigned int &address)
+{
+    std::string module_name ="mod-l1-";
+    module_name.append(std::to_string(mod));
+    mem::Module *module = getModule(module_name);
+
+    if(module == NULL)
+    {
+        std::cout<<"NUll pointer"<<std::endl;
+    }
+    else
+    {
+        // Send the packet
+        if (module->canAccess(address))
+        {
+
+            // new witness
+            int *current_witness = (int *)malloc(sizeof(int));
+
+
+            *current_witness = -1;
+            // Insert to access_map_list
+            a_access current_access = {
+                access_identifier,
+                address,
+                type,
+                "test",
+                current_witness
+            };
+            accesses_list.emplace(access_identifier,current_access);
+
+
+            // Perform the access
+            module->Access( accesses_list.at(access_identifier).access_type
+                            ,accesses_list.at(access_identifier).access_address
+                            ,accesses_list.at(access_identifier).access_witness);
+            ++access_identifier;
+        }
+    }
+}
 
 int System::Step()
 {
