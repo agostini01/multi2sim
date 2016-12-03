@@ -1,13 +1,14 @@
 #!/usr/bin/env python2.7
 
-ACCESS_TYPE = 2
-MODULES = [1, 2]
+ACCESS_TYPE = "R"
+MODULES = [0]
 MIN_ADDR = 0x0000
 MAX_ADDR = 0x4000
 SEPARATED_BY = 32
 DELAY = 1
+# TODO: generate multiple accesses per cycle
 
-TRACE_FILE = "sample-trace-2.txt"
+TRACE_FILE = "sample-trace.txt"
 
 
 def main ():
