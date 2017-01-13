@@ -670,9 +670,7 @@ int System::Finalize(){
 
 void System::TraceFileRun()
 {
-        if (input_memory_trace_file.empty())
-                return;
-
+        // TODO: make trace file class
         const auto& input_file_path = input_memory_trace_file;
         std::ifstream input_file(input_file_path);
         if (!input_file)
@@ -684,100 +682,92 @@ void System::TraceFileRun()
            ----------------
            trace_file ::= line *
            line ::= access | '#' ...
-           access ::= [ delay ] module type addr
-           delay ::= '+'INT
-           module ::= INT
-           type ::= INT
-           addr ::= INT
+           access ::= delay [module params ...] type addr
         */
-        struct TraceLine {
-                unsigned int type, address;
-                unsigned int module, cycle;
-                inline TraceLine (unsigned int t, unsigned int a,
-                                  unsigned int m, unsigned int c) :
-                        type(t), address(a), module(m), cycle(c)
-                {
-                }
-        };
-        std::vector<TraceLine> accesses;
-        unsigned int cycle = 0;
-        misc::StringError str_err;
-        unsigned int line_num;
 
+        // string things
+        std::string line;
+        std::vector<std::string> words;
+        misc::StringError str_err;
+
+        unsigned int line_num;
         for (line_num = 1; !input_file.eof(); line_num++)
         {
-                std::string line;
+                line.clear();
                 std::getline(input_file, line);
+
+                // TODO: move this into ParseLine() method of some class
+
+                // remove comment
+                size_t comment_pos = line.find('#');
+                if (comment_pos != std::string::npos)
+                        line.resize(comment_pos);
+
+                // trim and break if empty line
                 misc::StringTrim(line);
-
-                // comment or empty line
-                if (line.empty()
-                    || line[0] == '#')
+                if (line.empty())
                         continue;
-                // tokenize words
-                std::vector<std::string> words;
+
+                // break string into words
+                words.clear();
                 misc::StringTokenize(line, words);
-                if (words.empty())
-                        continue;
-
-                // position of "module" identifier in words
-                // e.g.  +1 2 1 0x1000    mod_pos = 1
-                //          ^
-                //       2 2 0x2000       mod_pos = 0
-                //       ^
-                unsigned int mod_pos = 0;
-
-                // parse "+DELAY"
-                if (words[0].size() > 1 && words[0][0] == '+') {
-                        mod_pos = 1;
-
-                        int delay = misc::StringToInt(words[0], str_err);
-                        if (str_err != misc::StringErrorOK) break;
-                        if (delay < 0)
-                                throw Error(misc::fmt("invalid trace file: line %d: "
-                                                      "invalid negative cycles",
-                                                      line_num));
-                        cycle += delay;
-                }
-
-                // check # of words
-                if (words.size() > (mod_pos + 3))
-                        throw Error(misc::fmt("invalid trace file: line %d: "
-                                              "too many integers on line",
-                                              line_num));
-                if (words.size() < (mod_pos + 3))
-                        throw Error(misc::fmt("invalid trace file: line %d: "
-                                              "missing some parameters on line",
+                if (words.size() < 3)
+                        throw Error(misc::fmt("%s: line %d: not enough values on line",
+                                              input_file_path.c_str(),
                                               line_num));
 
-                // parse "MOD TYPE ADDR"
-                unsigned int module = misc::StringToInt(words[mod_pos], str_err);
-                if (str_err != misc::StringErrorOK) break;
-                unsigned int type = misc::StringToInt(words[mod_pos + 1], str_err);
-                if (str_err != misc::StringErrorOK) break;
-                unsigned int address = misc::StringToInt(words[mod_pos + 2], str_err);
-                if (str_err != misc::StringErrorOK) break;
-                // insert into list
-                accesses.emplace_back(type, address, module, cycle);
-        }
+                // parsed values from line
+                unsigned int delay, addr, module;
+                mem::Module::AccessType type;
 
-        if (str_err != misc::StringErrorOK)
-                throw Error(misc::fmt("invalid trace file: line %d: "
-                                      "invalid number format",
-                                      line_num));
+                // parse delay
+                delay = misc::StringToInt(words[0], str_err);
+                if (str_err != misc::StringErrorOK)
+                        throw Error(misc::fmt("%s: line %d: malformed access delay",
+                                              input_file_path.c_str(),
+                                              line_num));
 
-        // run the parsed trace file
-        cycle = 0;
-        for (auto& acc : accesses)
-        {
-                // wait for correct cycle #
-                while (cycle < acc.cycle)
-                {
+                // parse type
+                auto& type_str = words[words.size() - 2];
+                if (type_str == "1")
+                        type = mem::Module::AccessLoad;
+                else if (type_str == "2")
+                        type = mem::Module::AccessStore;
+                else if (type_str == "R")
+                        type = mem::Module::AccessLoad;
+                else if (type_str == "W")
+                        type = mem::Module::AccessStore;
+                else
+                        throw Error(misc::fmt("%s: line %d: malformed access type",
+                                              input_file_path.c_str(),
+                                              line_num));
+
+                // parse address
+                addr = misc::StringToInt(words[words.size() - 1], str_err);
+                if (str_err != misc::StringErrorOK)
+                        throw Error(misc::fmt("%s: line %d: malformed access address",
+                                              input_file_path.c_str(),
+                                              line_num));
+
+                // parse module
+                // TODO: turn off this error with parameter; DRAM doesn't need module
+                if (words.size() <= 3)
+                        throw Error(misc::fmt("%s: line %d: missing access module",
+                                              input_file_path.c_str(),
+                                              line_num));
+                // TODO: send module as string instead of number, in Access(...)
+                module = misc::StringToInt(words[1], str_err);
+                if (str_err != misc::StringErrorOK)
+                        throw Error(misc::fmt("%s: line %d: malformed access module",
+                                              input_file_path.c_str(),
+                                              line_num));
+
+                // we parsed our line; perform the access
+                for (unsigned int i = 0; i < delay; i++)
                         Step();
-                        cycle++;
-                }
-                Access(acc.module, acc.type, acc.address);
+                Access(module, type, addr);
         }
+
         // finish
         Finalize();
 }
