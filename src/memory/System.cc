@@ -349,7 +349,7 @@ void System::RegisterOptions()
 			"Memory configuration file. For a detailed description "
 			"of the sections and variables supported for this file "
 			"use option '--mem-help'.");
-	
+
 	// Help message for memory system
 	command_line->RegisterBool("--mem-help",
 			help,
@@ -424,7 +424,7 @@ void System::ProcessOptions()
 void System::RandomInjectionRun()
 {
 	// Random Number generation setup
-	std::random_device rd;	
+	std::random_device rd;
 	std::mt19937 rng(rd());
 	std::uniform_int_distribution<unsigned> random_generator(0, 0xfffff);
 
@@ -491,7 +491,7 @@ void System::RandomInjectionRun()
 					// Get the type of access based on the
 					// ratio
 					Module::AccessType type = random() <
-						ratio ? Module::AccessStore : 
+						ratio ? Module::AccessStore :
 						Module::AccessLoad;
 
 					// Perform the access
@@ -503,7 +503,7 @@ void System::RandomInjectionRun()
 		}
 
 		// Next cycle
-		debug << misc::fmt("___ cycle %lld ___\n", cycle);	
+		debug << misc::fmt("___ cycle %lld ___\n", cycle);
 		esim_engine->ProcessEvents();
 	}
 
@@ -550,6 +550,8 @@ void System::Access(const unsigned int &mod, const unsigned int &type, const uns
             }
 
             // new witness
+						// TODO: Change to implementation of smart pointer provided by m2s
+						// free is performed at: int System::checkProccessedEvents()
             int *current_witness = (int *)malloc(sizeof(int));
 
 
@@ -591,6 +593,8 @@ void System::Access(const unsigned int &mod, const mem::Module::AccessType& type
         {
 
             // new witness
+						// TODO: Change to implementation of smart pointer provided by m2s
+						// free is performed at: int System::checkProccessedEvents()
             int *current_witness = (int *)malloc(sizeof(int));
 
 
@@ -887,4 +891,3 @@ void System::SanityCheck()
 }
 
 }  // namespace mem
-
