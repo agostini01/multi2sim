@@ -10,99 +10,203 @@
 *  Example copyright 1998, Sutherland HDL Inc, Portland, Oregon, USA
 *   Contact: www.sutherland-hdl.com
 *********************************************************************/
+
+/*********************************************************************/
 `timescale 1ns / 1ns
 module top;
-tri  [1:0] results;
-integer    test;
-real       foo;
-time       bar;
-reg  [32:0] result;
-reg         a, b;
-reg[256*8:0] string;
-reg[7:0] random;
 
-  addbit i1 (test[0], test[1], test[2], results[0], results[1]);
+  reg clk, reset;
+  reg access_en;
 
-	always
-	begin
-	#5 result=$m2s_step();
-	end
+  // Inputs ----------------------------------
+  // request
+  reg rw_flag;
+  reg[30:0] address;
+  reg[31:0] data;
 
-	always
-	begin
-	random=$urandom_range(255,0);
-	#100 $m2s_access(1, 1, random);
-	//#4   $m2s_access(1, 1, (random=random+4));
-	end
+  wire[63:0] request;
+  assign request={rw_flag,address,data};
+
+  // identification
+  reg[9:0] identification;
+
+  // Outputs -----------------------------------
+  wire[31:0] data_out;
+  wire[9:0] identification_out;
+  wire[9:0] next_id_available_out;
+
+  reg[256*8:0] string;
 
   initial
   begin
-
-  test = 3'b000;
-  foo = 3.14;
-  bar = 0;
-  bar[63:60] = 4'hF;
-  bar[35:32] = 4'hA;
-  bar[31:28] = 4'hC;
-  bar[03:00] = 4'hE;
-
-// Removed this section because of  the string output
-//      #10 $show_all_signals;
-//      begin: local
-//      reg  foobar;
-//      #10 test = 3'b010;
-//      #10 $show_all_signals;
-//      #10 $show_all_signals(top.i1);
-//      end
-      //      #10 $stop;
-   	  #10000 $m2s_finalize;
-      #10001 $finish;
-      end
-
-initial
-    begin
-    a = 1;
-    b = 0;
-    string = "--si-sim detailed --si-config si-config \
---mem-config mem-si-1 \
---si-report si_report \
---mem-report mem_report \
---trace trace.gz \
---mem-debug debug.mem \
-outM2S";
-
-    //$display("%s", string);
-
-    #1 $m2s_initialize;
-    #1 $m2s_reset;
-	//#9 $m2s_access(1, 1, 8'hAA);
-	//#50 $m2s_access(1, 1, 8'hAA);
-
-    end
-endmodule
+      string = "--si-sim detailed --si-config si-config \
+  --mem-config mem-si-1 \
+  --si-report si_report \
+  --mem-report mem_report \
+  --trace trace.gz \
+  --mem-debug debug.mem \
+  outM2S";
+  end
 
 
+  // Clock generator
+  always
+  begin
+    #1  clk = ~clk; // Toggle clock every 5 ticks
+  end
 
+  initial begin
+    #0 reset = 0;
+    #0 access_en = 0;
+    #0 address = 0;
+    #0 rw_flag = 0;
 
+    #5 reset = 1;
+    #10 reset = 0;
+    #10001 $finish;
+  end
 
+  // Stim generator
+  always
+  begin
+    #1  clk = ~clk; // Toggle clock every 5 ticks
+  end
 
+  always
+  begin
+    #50 access_en = 1;
+    #0 identification = 0;
+    #1 access_en = 0;
+  end
 
+  always
+  begin
+    #1 address=$urandom_range(255,0);
+    #1 rw_flag=$urandom_range(1,0);
+  end
 
-/*** An RTL level 1 bit adder model ***/
-`timescale 1ns / 1ns
-module addbit (a, b, ci, sum, co);
-input  a, b, ci;
-output sum, co;
-
-  wire  a, b, ci;
-  reg   sum, co;
-
-  always @(a or b or ci)
-  {co, sum} = a + b + ci;
-
-  //always @(sum)
-  //$show_all_signals();
+  // Instance generator
+  interface i1(
+    .clk(clk),
+    .reset(reset),
+    .access_en(access_en),
+    .request_in(request),
+    .identification_in(identification),
+    .data_out(data_out),
+    .identification_out(identification_out),
+    .next_id_available_out(next_id_available_out)
+    );
 
 endmodule
 /*********************************************************************/
 
+
+/*** An RTL For the VPI communication ***/
+`timescale 1ns / 1ns
+module interface (clk, reset, access_en, request_in, identification_in,
+                  data_out, identification_out, next_id_available_out);
+
+  // Inputs
+  input clk, reset, access_en;
+  input [63:0] request_in;
+  input [9:0] identification_in;
+
+  // Outputs
+  output [31:0] data_out;
+  output [9:0] identification_out;
+  output [9:0] next_id_available_out;
+
+  // Subfields
+  reg rw_flag;
+  reg [30:0] address;
+  reg [31:0] data;
+
+  always @ ( * ) begin
+    rw_flag=request_in[63];
+    address=request_in[62:32];
+    data=request_in[31:0];  
+  end
+
+
+  // Other signals
+  wire access_en;
+  reg  [32:0] result;
+  reg running;
+
+  // State machine to initialize the m2s interface
+  parameter init_st=0, reset_st=1, work_st=2, finish_st=3;
+  reg [1:0] state;
+
+  // Next state logic
+  always @(posedge clk or posedge reset)
+  begin
+    case (state)
+
+      init_st:
+       state = reset_st;
+
+      reset_st:
+        if (reset)
+          state = reset_st;
+        else
+          state = work_st;
+
+      work_st:
+        if (reset)
+          state = reset_st;
+        else if (finish_st)
+          state = finish_st;
+        else
+          state = work_st;
+
+      finish_st:
+        state = finish_st;
+
+    endcase
+  end
+
+
+  // Request out
+
+  initial begin
+    $m2s_initialize;
+    running=1;
+  end
+
+  always @ (posedge clk)
+  begin
+    result = 0;
+    if (reset)
+
+      if(state==work_st)
+      begin
+        result=$m2s_step;
+
+        if (access_en)
+        begin
+          $m2s_access(1, 1, address);
+        end
+      end
+
+      if(state==finish_st)
+      begin
+        if(running) // latch
+        begin
+          $m2s_finalize;
+          running = 0;
+        end
+        else
+          running = 1;
+      end
+
+
+    else
+      $m2s_reset;
+
+
+  end
+
+  // Must do access_en logic!!!!!!!
+
+endmodule
+/*********************************************************************/
