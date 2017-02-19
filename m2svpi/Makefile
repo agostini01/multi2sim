@@ -83,7 +83,7 @@ run:
 
 .PHONY: visual
 visual:
-	$(MODELSIM)/vsim -pli $(TARGET) $(TESTBENCH) -do "wave.do" -do "run 100ns"
+	$(MODELSIM)/vsim -pli $(TARGET) $(TESTBENCH) -do "waves/wave.do" -do "run 100ns"
 
 .PHONY: all
 all:
