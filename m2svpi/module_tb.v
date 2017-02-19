@@ -12,7 +12,7 @@
 *********************************************************************/
 
 /*********************************************************************/
-`timescale 1ns / 1ns
+`timescale 1ns / 100ps
 module top;
 
   reg clk, reset;
@@ -50,16 +50,11 @@ module top;
   outM2S";
   end
 
-
-  // Clock generator
-  always
-  begin
-    #1  clk = ~clk; // Toggle clock every 5 ticks
-  end
-
   initial begin
+    #0 clk = 0;
     #0 reset = 0;
     #0 write_en = 0;
+    #0 read_en = 0;
     #0 address = 0;
     #0 rw_flag = 0;
 
@@ -76,9 +71,9 @@ module top;
 
   always
   begin
-    #50 write_en = 1;
-    #0 identification = 0;
-    #1 write_en = 0;
+      #50 write_en = 1;
+      #0 identification = 0;
+      #2 write_en = 0;
   end
 
   always
@@ -223,7 +218,7 @@ module interface (
 
   // Next state logic
   always @(posedge clk or posedge reset)
-  begin
+  begin : NEXT_STATE
     case (state)
 
       init_st:
@@ -258,7 +253,7 @@ module interface (
   end
 
   always @ (posedge clk)
-  begin
+  begin : FLOW_LOGIC
     ret_data = 0;
     if (reset)
 

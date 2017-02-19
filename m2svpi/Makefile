@@ -81,6 +81,10 @@ load:
 run:
 	$(MODELSIM)/vsim -c -pli $(TARGET) $(TESTBENCH)
 
+.PHONY: visual
+visual:
+	$(MODELSIM)/vsim -pli $(TARGET) $(TESTBENCH) -do "wave.do" -do "run 100ns"
+
 .PHONY: all
 all:
 	make clean
