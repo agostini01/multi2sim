@@ -57,9 +57,11 @@ module top;
     #0 read_en = 0;
     #0 address = 0;
     #0 rw_flag = 0;
+    #0 data = 7;
+    #0 identification =0;
 
     #5 reset = 1;
-    #10 reset = 0;
+    #5 reset = 0;
     #10001 $finish;
   end
 
@@ -72,15 +74,12 @@ module top;
   always
   begin
       #50 write_en = 1;
-      #0 identification = 0;
+      #0 identification = identification+1;
+      #0 address=$urandom_range(255,0);
+      #0 rw_flag=$urandom_range(1,0);
       #2 write_en = 0;
   end
 
-  always
-  begin
-    #1 address=$urandom_range(255,0);
-    #1 rw_flag=$urandom_range(1,0);
-  end
 
   // Instance generator
   interface i1(
@@ -126,7 +125,7 @@ module interface (
   output full_flag;
   // Subfields
   wire [73:0] request_data_in;
-  assign request_data_in = {request_in,identification_in};
+  assign request_data_in [73:0] = 15// TODO //{request_in[63:0],identification_in[9:0]};
 
   // Access served ports
   // Derection <-----------
@@ -157,31 +156,40 @@ module interface (
     .write_req_en(request_write_en),
     .data_req_in(request_data_in),
     .full_req_flag(full_flag),
-    .read_req_en(read_en),
+    .read_req_en(0), // TODO
     .data_req_out(data_req_out),
     .empty_req_flag(empty_req_flag),
 
-    .read_serve_en(read_en),
+    .read_serve_en(served_read_en),
     .data_serve_out(served_data_out),
     .empty_serve_flag(empty_flag),
-    .write_serve_en(request_write_en),
+    .write_serve_en(0), // TODO
     .data_serve_in(ret_data_serve_in),
     .full_serve_flag(full_serve_flag)
 
   );
   
   // unpacking the signals to be used by multi2sim
-  reg rw_flag;
-  reg [30:0] address;
-  reg [31:0] data;
-  reg [9:0] id;
-  always@(*)
-  begin
-    rw_flag=data_req_out[73];
-    address=data_req_out[72:42];
-    data=data_req_out[41:10]; 
-    id= data_req_out[9:0];
-  end
+  // reg rw_flag;
+  // reg [30:0] address;
+  // reg [31:0] data;
+  // reg [9:0] id;
+  // always@(*)
+  // begin
+  //   rw_flag=data_req_out[73];
+  //   address=data_req_out[72:42];
+  //   data=data_req_out[41:10]; 
+  //   id= data_req_out[9:0];
+  // end
+  wire [30:0]address;
+  wire [31:0]data;
+  wire [9:0]id;
+  //assign rw_flag=data_req_out[73];
+  //assign address[30:0]=data_req_out[72:42];
+  //assign data[31:0]=data_req_out[41:10];
+  //assign id[9:0]= data_req_out[9:0];
+  
+  
   // packing the signals to be send back
   reg ret_data;
   reg ret_id;
@@ -255,15 +263,15 @@ module interface (
   always @ (posedge clk)
   begin : FLOW_LOGIC
     ret_data = 0;
-    if (reset)
-
+    if (!reset)
+    begin
       if(state==work_st)
       begin
         ret_data=$m2s_step;
 
-        if (rw_flag)
+        if (1)//(rw_flag)
         begin
-          $m2s_access(1, 1, address);
+          //$m2s_access(1, 1, address);
         end
       end
 
@@ -278,7 +286,7 @@ module interface (
           running = 1;
       end
 
-
+    end
     else
       $m2s_reset;
 
@@ -335,11 +343,11 @@ full_serve_flag
   output full_serve_flag;
   
   // [request side]
-  syn_fifo #(.DATA_WIDTH(74),.ADDR_WIDTH(8),.RAM_DEPTH(1))REQUEST_FIFO(
+  syn_fifo #(.DATA_WIDTH(74),.ADDR_WIDTH(2))REQUEST_FIFO(
   .clk      (clk)             , // Clock input
-  .rst      (reset)           , // Active high reset
+  .rst      (rst)           , // Active high reset
   .wr_cs    (1'b1)            , // Write chip select
-  .rd_cs    (1'b1)            , // Read chipe select
+  .rd_cs    (1'b1)            , // Read chip select
   .data_in  (data_req_in)     , // Data input   [request side]
   .rd_en    (read_req_en)     , // Read enable  [m2s side]
   .wr_en    (write_req_en)    , // Write Enable [request side]
@@ -349,11 +357,11 @@ full_serve_flag
   ); 
 
   // [m2s side]
-  syn_fifo #(.DATA_WIDTH(52),.ADDR_WIDTH(8),.RAM_DEPTH(1))SERVE_FIFO(
+  syn_fifo #(.DATA_WIDTH(52),.ADDR_WIDTH(2))SERVE_FIFO(
   .clk      (clk)             , // Clock input
-  .rst      (reset)           , // Active high reset
+  .rst      (rst)           , // Active high reset
   .wr_cs    (1'b1)            , // Write chip select
-  .rd_cs    (1'b1)            , // Read chipe select
+  .rd_cs    (1'b1)            , // Read chip select
   .data_in  (data_serve_in)   , // Data input   [m2s side]
   .rd_en    (read_serve_en)   , // Read enable  [request side]
   .wr_en    (write_serve_en)  , // Write Enable [m2s side]
@@ -401,8 +409,8 @@ input we_1 ;
 input oe_1 ; 
 
 //--------------Inout Ports----------------------- 
-inout [DATA_WIDTH-1:0] data_0 ; 
-inout [DATA_WIDTH-1:0] data_1 ;
+input [DATA_WIDTH-1:0] data_0 ; 
+output [DATA_WIDTH-1:0] data_1 ;
 
 //--------------Internal variables---------------- 
 reg [DATA_WIDTH-1:0] data_0_out ; 
@@ -464,7 +472,7 @@ module syn_fifo (
 clk      , // Clock input
 rst      , // Active high reset
 wr_cs    , // Write chip select
-rd_cs    , // Read chipe select
+rd_cs    , // Read chip select
 data_in  , // Data input
 rd_en    , // Read enable
 wr_en    , // Write Enable
@@ -557,4 +565,131 @@ ram_dp_ar_aw #(DATA_WIDTH,ADDR_WIDTH)DP_RAM (
 );     
 
 endmodule
+
+`timescale 1ns/1ns
+module tb_for_fifo;
+  reg clk,reset;
+
+  wire [7:0]data_serve_in;
+  assign data_serve_in [7:0]=3;
+  reg write_serve_en;
+
+  wire[7:0]data_serve_out;
+  reg read_serve_en;
+
+  wire empty_serve_flag,full_serve_flag;
+
+  syn_fifo #(.DATA_WIDTH(8),.ADDR_WIDTH(8))test_fifo(
+  .clk      (clk)             , // Clock input
+  .rst      (reset)           , // Active high reset
+  .wr_cs    (1'b0)            , // Write chip select
+  .rd_cs    (1'b0)            , // Read chip select
+  .data_in  (data_serve_in)   , // Data input   [m2s side]
+  .rd_en    (read_serve_en)   , // Read enable  [request side]
+  .wr_en    (write_serve_en)  , // Write Enable [m2s side]
+  .data_out (data_serve_out)  , // Data Output  [request side]
+  .empty    (empty_serve_flag), // FIFO empty   [m2s side]
+  .full     (full_serve_flag)   // FIFO full    [request side]
+  ); 
+  
+  
+  
+initial
+begin
+  clk=0;
+  reset=0;
+  write_serve_en=0;
+  read_serve_en=0;
+  //data_serve_in=0;
+  #5  reset=1;
+    #5  reset=0;
+  #1000 $finish;
+end
+
+always
+  #1 clk = !clk;
+
+always
+begin
+  #50 write_serve_en=1;
+  #10 write_serve_en=0;
+end
+
+//always
+//  #10 data_serve_in = data_serve_in+3;
+  
+always
+begin
+  #100 read_serve_en=1;
+  #10 read_serve_en=0;
+end
+
+endmodule
+
+
+`timescale 1ns/1ns
+module tb_for_twofifo;
+
+  reg clk,reset;
+
+  wire [73:0]data_serve_in;
+  assign data_serve_in [73:0]=3;
+  reg write_serve_en;
+
+  wire[73:0]data_serve_out;
+  reg read_serve_en;
+
+  wire empty_serve_flag,full_serve_flag;
+
+  two_piped_fifos U1(
+    .clk(clk),
+    .rst(reset),
+
+    .write_req_en(write_serve_en),
+    .data_req_in(data_serve_in),
+    .full_req_flag(full_serve_flag),
+    .read_req_en(read_serve_en),
+    .data_req_out(data_serve_out),
+    .empty_req_flag(empty_serve_flag),
+
+    .read_serve_en(),
+    .data_serve_out(),
+    .empty_serve_flag(),
+    .write_serve_en(),
+    .data_serve_in(),
+    .full_serve_flag()
+
+  );
+  
+  
+  initial
+begin
+  clk=0;
+  reset=0;
+  write_serve_en=0;
+  read_serve_en=0;
+  //data_serve_in=0;
+  #5  reset=1;
+    #5  reset=0;
+  #1000 $finish;
+end
+
+always
+  #1 clk = !clk;
+
+always
+begin
+  #50 write_serve_en=1;
+  #10 write_serve_en=0;
+end
+
+//always
+//  #10 data_serve_in = data_serve_in+3;
+  
+always
+begin
+  #100 read_serve_en=1;
+  #10 read_serve_en=0;
+end
+  endmodule
 
