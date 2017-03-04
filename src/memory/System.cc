@@ -514,6 +514,70 @@ void System::RandomInjectionRun()
 	esim_engine->Finish("MaxTime");
 }
 
+void System::Access(const unsigned int &mod
+                         , const unsigned int &type
+                         , const unsigned int &address
+                         , const unsigned int &identifier)
+{
+	std::string module_name ="mod-l1-";
+	module_name.append(std::to_string(mod));
+	mem::Module *module = getModule(module_name);
+
+	if(module == NULL)
+	{
+		std::cout<<"NUll pointer"<<std::endl;
+	}
+	else
+	{
+		// Send the packet
+		if (module->canAccess(address))
+		{
+			// Get the type of access based on the number
+			mem::Module::AccessType the_type = mem::Module::AccessInvalid;
+			switch (type) {
+			case 0:
+				the_type = mem::Module::AccessInvalid;
+				break;
+			case 1:
+				the_type = mem::Module::AccessLoad;
+				break;
+			case 2:
+				the_type = mem::Module::AccessStore;
+				break;
+			case 3:
+				the_type = mem::Module::AccessNCStore;
+				break;
+			default:
+				the_type = mem::Module::AccessInvalid;
+				break;
+			}
+
+			// new witness
+			            // TODO: Change to implementation of smart pointer provided by m2s
+			            // free is performed at: int System::checkProccessedEvents()
+			int *current_witness = (int *)malloc(sizeof(int));
+
+
+			*current_witness = -1;
+			// Insert to access_map_list
+			a_access current_access = {
+			    identifier,
+			    address,
+			    the_type,
+			    "test",
+			    current_witness
+			};
+			accesses_list.emplace(identifier,current_access);
+
+
+			// Perform the access
+			module->Access( accesses_list.at(identifier).access_type
+			                ,accesses_list.at(identifier).access_address
+			                ,accesses_list.at(identifier).access_witness);
+		}
+	}
+}
+
 void System::Access(const unsigned int &mod, const unsigned int &type, const unsigned int &address)
 {
     std::string module_name ="mod-l1-";

@@ -515,7 +515,8 @@ void Multi2Sim::m2sFinalize()
 // Only called by the VPI
 void Multi2Sim::m2sAccess(const unsigned int &mod
                          , const unsigned int &type
-                         , const unsigned int &address)
+                         , const unsigned int &address
+                         , const unsigned int &identifier)
 {
     std::cout<<"M2S::vpiAccess()"		<<std::endl
              <<"\tmod = "	    << mod	<<std::endl

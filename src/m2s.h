@@ -40,7 +40,7 @@ public:
     void m2sAccess(const unsigned int & mod
 		  ,const unsigned int & type
 		  ,const unsigned int & address
-		  );
+	      ,const unsigned int & identifier);
 
     // Finilize simulation and generate dump files
     void m2sFinalize();

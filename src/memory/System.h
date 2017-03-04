@@ -495,6 +495,11 @@ public:
                                  , const unsigned int &type
                                  , const unsigned int &address);
 
+		void Access(const unsigned int &mod
+		                         , const unsigned int &type
+		                         , const unsigned int &address
+		                         , const unsigned int &identifier);
+
         void Access(const unsigned int &mod
                                  , const mem::Module::AccessType& type
                                  , const unsigned int &address);
