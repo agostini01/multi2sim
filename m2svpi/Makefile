@@ -51,7 +51,7 @@ _LIB=
 LIB=$(patsubst %,$(LDIR)/%,$(_LIB))
 
 VDIR=
-_VPI=$(TESTBENCHFILE)
+_VPI=$(TESTBENCHFILE) fifos.v
 VPI=$(_VPI)
 
 
