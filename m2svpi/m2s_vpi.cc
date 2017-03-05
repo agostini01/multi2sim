@@ -242,7 +242,7 @@ PLI_INT32 m2s_access_calltf(PLI_BYTE8 *user_data)
     vpi_printf("VPI::In m2s_access_calltf call\n");
     s_vpi_value value_s;
     vpiHandle   systf_handle, arg_itr, arg_handle;
-	PLI_INT32   mod, type, address, identifier;
+	PLI_INT32   mod, type, address, data, identifier;
 
     systf_handle = vpi_handle(vpiSysTfCall, NULL);
     arg_itr = vpi_iterate(vpiArgument, systf_handle);
@@ -265,6 +265,11 @@ PLI_INT32 m2s_access_calltf(PLI_BYTE8 *user_data)
     value_s.format = vpiIntVal;
     vpi_get_value(arg_handle, &value_s);
     address = value_s.value.integer;
+
+    arg_handle = vpi_scan(arg_itr);
+    value_s.format = vpiIntVal;
+    vpi_get_value(arg_handle, &value_s);
+    data = value_s.value.integer;
 
     arg_handle = vpi_scan(arg_itr);
     value_s.format = vpiIntVal;
@@ -296,7 +301,7 @@ PLI_INT32 m2s_access_compiletf(PLI_BYTE8 *user_data)
       if (systf_handle == NULL)
 	  vpi_printf("something is wrong\n");
       if (arg_itr == NULL) {
-	vpi_printf("ERROR: $access() requires 4 arguments; has none\n");
+	vpi_printf("ERROR: $access() requires 5 arguments; has none\n");
 	err_flag = 1;
 	break;
       }
@@ -304,8 +309,9 @@ PLI_INT32 m2s_access_compiletf(PLI_BYTE8 *user_data)
       tfarg_type = vpi_get(vpiType, arg_handle);
       if ( (tfarg_type != vpiReg) &&
 	   (tfarg_type != vpiIntegerVar) &&
-	   (tfarg_type != vpiConstant)   ) {
-	vpi_printf("ERROR: $access() arg1 must be number, variable or net\n");
+	   (tfarg_type != vpiConstant) &&
+       (tfarg_type != vpiParameter)  ) {
+	vpi_printf("ERROR: $access() arg1 must be number, variable, net or parameter\n");
 	err_flag = 1;
 	break;
       }
@@ -351,8 +357,22 @@ PLI_INT32 m2s_access_compiletf(PLI_BYTE8 *user_data)
 	err_flag = 1;
 	break;
       }
+	  arg_handle = vpi_scan(arg_itr);
+      if (arg_handle == NULL) {
+	vpi_printf("ERROR: $access() requires 5nd argument\n");
+	err_flag = 1;
+	break;
+      }
+      tfarg_type = vpi_get(vpiType, arg_handle);
+      if ( (tfarg_type != vpiReg) &&
+	   (tfarg_type != vpiIntegerVar) &&
+	   (tfarg_type != vpiConstant)   ) {
+	vpi_printf("ERROR: $access() arg5 must be number, variable or net\n");
+	err_flag = 1;
+	break;
+      }
       if (vpi_scan(arg_itr) != NULL) {
-	vpi_printf("ERROR: $access() requires 4 arguments; has too many\n");
+	vpi_printf("ERROR: $access() requires 5 arguments; has too many\n");
 	vpi_free_object(arg_itr);
 	err_flag = 1;
 	break;
