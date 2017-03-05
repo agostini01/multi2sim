@@ -32,7 +32,7 @@ LDFLAGS=-m32 -shared -Bsymbolic
 LDPOSTFLAGS=-lz
 TARGET=vpi_interface.sl
 TESTBENCHFILE=module_tb.v
-TESTBENCH=top
+TESTBENCH=mem_controller_tb
 
 #DDIR=
 _DEPS=$(MULTI2SIM)/m2s.h
@@ -50,8 +50,8 @@ LDIR=lib
 _LIB=
 LIB=$(patsubst %,$(LDIR)/%,$(_LIB))
 
-VDIR=
-_VPI=$(TESTBENCHFILE) fifos.v
+VDIR=vsrc
+_VPI=$(VDIR)/$(TESTBENCHFILE) $(VDIR)/fifos.v $(VDIR)/mem_controller.v
 VPI=$(_VPI)
 
 

@@ -28,22 +28,23 @@ two_fifo_pipe U1(
 	.rst(reset),			// Active high reset
 
 	// ------------------------------------>
-	.from_DP_data_in(from_DP_data_in),	// Data input to vpi
-	.from_DP_wr_ctr(from_DP_wr_ctr),	// Write enable
-	.from_DP_full(from_DP_full),			// FIFO to vpi full
+	.A_data_in(from_DP_data_in),	// Data input to vpi
+	.A_wr_ctr(from_DP_wr_ctr),		// Write enable
+	.A_full(from_DP_full),			// FIFO to vpi full
 
-	.to_VPI_data_out(to_VPI_data_out), 	// Data output to vpi
-	.to_VPI_rd_ctr(to_VPI_rd_ctr),		// Read Enable
-	.to_VPI_empty(to_VPI_empty),		// FIFO from dp empty
+	.A_data_out(to_VPI_data_out), 	// Data output to vpi
+	.A_rd_ctr(to_VPI_rd_ctr),		// Read Enable
+	.A_empty(to_VPI_empty),			// FIFO from dp empty
 
 	// <------------------------------------
-	.from_VPI_data_in(),	// Data input to DP
-	.from_VPI_wr_ctr(),	// Write Enable
-	.from_VPI_full(),		// FIFO empty
+	.B_data_in(),		// Data input to DP
+	.B_wr_ctr(),		// Write Enable
+	.B_full(),			// FIFO empty
 
-	.to_DP_data_out(),		// Data output to vpi
-	.to_DP_rd_ctr(),		// Read Enable
-	.to_DP_empty()			// FIFO full
+	.B_data_out(),		// Data output to vpi
+	.B_rd_ctr(),		// Read Enable
+	.B_empty()			// FIFO full
+
 );
   
 
@@ -73,7 +74,7 @@ end
   
 always
 begin
-  #100 to_VPI_rd_ctr=1;
+  #200 to_VPI_rd_ctr=1;
   #10 to_VPI_rd_ctr=0;
 end
   endmodule
@@ -85,22 +86,22 @@ clk,				// Clock input
 rst,				// Active high reset
 
 // ------------------------------------>
-from_DP_data_in,	// Data input to vpi
-from_DP_wr_ctr,		// Write enable
-from_DP_full,			// FIFO to vpi full
+A_data_in,		// Data input to vpi
+A_wr_ctr,		// Write enable
+A_full,			// FIFO to vpi full
 
-to_VPI_data_out, 	// Data output to vpi
-to_VPI_rd_ctr,		// Read Enable
-to_VPI_empty,		// FIFO from dp empty
+A_data_out, 	// Data output to vpi
+A_rd_ctr,		// Read Enable
+A_empty,		// FIFO from dp empty
 
 // <------------------------------------
-from_VPI_data_in,	// Data input to DP
-from_VPI_wr_ctr,	// Write Enable
-from_VPI_full,		// FIFO empty
+B_data_in,	// Data input to DP
+B_wr_ctr,	// Write Enable
+B_full,		// FIFO empty
 
-to_DP_data_out,		// Data output to vpi
-to_DP_rd_ctr,		// Read Enable
-to_DP_empty			// FIFO full
+B_data_out,		// Data output to vpi
+B_rd_ctr,		// Read Enable
+B_empty			// FIFO full
 
 );
 
@@ -122,47 +123,51 @@ parameter VPI_DATA_WIDTH  = TID_WIDTH + DATA_WIDTH; // ID, Data
 input clk, rst;
 
 // [DP side]
-input [DP_DATA_WIDTH-1:0] from_DP_data_in;
-input from_DP_wr_ctr;
-output from_DP_full;
-output [VPI_DATA_WIDTH-1:0] to_DP_data_out;
-input to_DP_rd_ctr;
-output to_DP_empty;
+input [DP_DATA_WIDTH-1:0] A_data_in;
+input A_wr_ctr;
+output A_full;
+
+output [VPI_DATA_WIDTH-1:0] A_data_out;
+input A_rd_ctr;
+output A_empty;
 
 // [VPI side]
-input to_VPI_rd_ctr;
-output [DP_DATA_WIDTH-1:0]to_VPI_data_out;
-output to_VPI_empty;
-input [VPI_DATA_WIDTH-1:0]from_VPI_data_in;
-input from_VPI_wr_ctr;
-output from_VPI_full;
+output [DP_DATA_WIDTH-1:0]B_data_out;
+input B_rd_ctr;
+output B_empty;
+
+input [VPI_DATA_WIDTH-1:0]B_data_in;
+input B_wr_ctr;
+output B_full;
 
 // [From DP side]
+// ------------------------------------>
 syn_fifo #(.DATA_WIDTH(DP_DATA_WIDTH),.ADDR_WIDTH(FROM_DP_TO_VPI_DEPTH))REQUEST_FIFO(
 .clk      (clk)				, // Clock input
 .rst      (rst)				, // Active high reset
 .wr_cs    (1'b1)			, // Write chip select
 .rd_cs    (1'b1)			, // Read chip select
-.data_in  (from_DP_data_in)	, // Data input   [DP side]
-.rd_en    (to_DP_rd_ctr)	, // Read enable  [VPI side]
-.wr_en    (from_DP_wr_ctr)	, // Write Enable [DP side]
-.data_out (to_VPI_data_out)	, // Data Output  [VPI side]
-.empty    (to_VPI_empty)		, // FIFO empty   [DP side]
-.full     (from_DP_full)		  // FIFO full    [VPI side]
+.data_in  (A_data_in)	    , // Data input   [DP side]
+.wr_en    (A_wr_ctr)	    , // Write Enable [DP side]
+.full     (A_full)	        , // FIFO full    [DP side]
+.empty    (A_empty)	        , // FIFO empty   [VPI side]
+.rd_en    (A_rd_ctr)	    , // Read enable  [VPI side]
+.data_out (A_data_out)	      // Data Output  [VPI side]
 ); 
 
 // [From VPI side]
+// <------------------------------------
 syn_fifo #(.DATA_WIDTH(VPI_DATA_WIDTH),.ADDR_WIDTH(FROM_VPI_TO_DP_DEPTH))SERVE_FIFO(
-.clk      (clk)					, // Clock input
-.rst      (rst)					, // Active high reset
-.wr_cs    (1'b1)				, // Write chip select
-.rd_cs    (1'b1)				, // Read chip select
-.data_in  (from_VPI_data_in)	, // Data input   [VPI side]
-.rd_en    (to_DP_rd_ctr)		, // Read enable  [DP side]
-.wr_en    (from_VPI_wr_ctr)		, // Write Enable [VPI side]
-.data_out (to_DP_data_out)		, // Data Output  [DP side]
-.empty    (to_DP_empty)			, // FIFO empty   [VPI side]
-.full     (from_VPI_full)			  // FIFO full    [DP side]
+.clk      (clk)				, // Clock input
+.rst      (rst)				, // Active high reset
+.wr_cs    (1'b1)			, // Write chip select
+.rd_cs    (1'b1)			, // Read chip select
+.data_in  (B_data_in)	    , // Data input   [VPI side]
+.rd_en    (B_rd_ctr)		, // Read enable  [DP side]
+.wr_en    (B_wr_ctr)		, // Write Enable [VPI side]
+.data_out (B_data_out)		, // Data Output  [DP side]
+.empty    (B_empty)			, // FIFO empty   [VPI side]
+.full     (B_full)			  // FIFO full    [DP side]
 ); 
 
 
@@ -184,8 +189,8 @@ module tb_for_fifo;
   syn_fifo #(.DATA_WIDTH(8),.ADDR_WIDTH(8))test_fifo(
   .clk      (clk)             , // Clock input
   .rst      (reset)           , // Active high reset
-  .wr_cs    (1'b0)            , // Write chip select
-  .rd_cs    (1'b0)            , // Read chip select
+  .wr_cs    (1'b1)            , // Write chip select
+  .rd_cs    (1'b1)            , // Read chip select
   .data_in  (data_serve_in)   , // Data input   [m2s side]
   .rd_en    (read_serve_en)   , // Read enable  [request side]
   .wr_en    (write_serve_en)  , // Write Enable [m2s side]
