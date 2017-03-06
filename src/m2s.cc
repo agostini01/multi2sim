@@ -515,6 +515,23 @@ void Multi2Sim::m2sFinalize()
 // Only called by the VPI
 void Multi2Sim::m2sAccess(const unsigned int &mod
                          , const unsigned int &type
+                         , const unsigned int &address)
+{
+    std::cout<<"M2S::vpiAccess()"		<<std::endl
+             <<"\tmod = "	    << mod	<<std::endl
+             <<"\ttype = "    << type	<<std::endl
+             <<"\taddress = " << address	<<std::endl;
+
+    // mod-l1-0
+    // Get the right module
+    // FIX-ME Always the module number 0
+    mem::System *mem_system = mem::System::getInstance();
+    mem_system->Access(0,type,address);
+
+}
+
+void Multi2Sim::m2sAccess(const unsigned int &mod
+                         , const unsigned int &type
                          , const unsigned int &address
                          , const unsigned int &identifier)
 {
@@ -527,7 +544,7 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
     // Get the right module
     // FIX-ME Always the module number 0
     mem::System *mem_system = mem::System::getInstance();
-    mem_system->Access(0,type,address);
+    mem_system->Access(0,type,address,identifier);
 
 }
 
