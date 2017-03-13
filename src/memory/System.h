@@ -21,6 +21,7 @@
 #define MEMORY_SYSTEM_H
 
 #include <list>
+#include <vector>
 #include <map>
 #include <memory>
 
@@ -106,6 +107,9 @@ class System
 
         // Stand-alone simulator trace file
         static std::string input_memory_trace_file;
+
+        // Max number of max procced inflight access per L0 module
+        static long long max_inflight_processed_accesses;
 
 	// Message to display with '--mem-help'
 	static const std::string help_message;
@@ -358,7 +362,11 @@ public:
 
 
        // STAND ALONE SPECIFIC
+       // List of identifiers and accesses
        static std::map<int, a_access> accesses_list;
+
+       // List of procced accesses based on the module.
+       static std::map<int, std::vector<unsigned>> processed_accesses_map;
 
 
 	//

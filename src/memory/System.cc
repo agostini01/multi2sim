@@ -60,7 +60,9 @@ bool System::sim_mem_vpi = false;
 bool System::sim_mem_stand_alone = false;
 unsigned int System::access_identifier = 0;
 unsigned int System::total_witness =0;
+long long System::max_inflight_processed_accesses = 10000;
 std::map<int, a_access> System::accesses_list;
+std::map<int,std::vector<unsigned>> System::processed_accesses_map;
 bool System::sim_mem_stand_alone_random = false;
 std::string System::input_memory_trace_file;
 
@@ -701,27 +703,53 @@ int System::checkProccessedEvents()
 {
 
     total_witness=0; // Redundant way to check witness
-    std::map<int, mem::a_access>::iterator it=accesses_list.begin();
-    while ( it!=accesses_list.end())
+    std::map<int, mem::a_access>::iterator list_it=accesses_list.begin();
+    while ( list_it!=accesses_list.end())
     {
-        if(*it->second.access_witness==0)
+        if(*list_it->second.access_witness==0)
         {
 
             // FIXME: Has to change VPI objects or pass information
-            std::cout << "============ Access id: "<<it->first
-                      << " to address " << it->second.access_address
+            // Add the identifier to the vector of processed identifiers
+            // FIXME: Must change the key to represent the right module it->second.access_module_name
+            processed_accesses_map.at(0).push_back(list_it->first);
+            std::cout << "============ Access id: "<<list_it->first
+                      << " to address " << list_it->second.access_address
                       << " finished accessing ============="<< '\n';
 
-            free(it->second.access_witness);
-            accesses_list.erase(it++); // Erase and increment iterator to check next access
+            free(list_it->second.access_witness);
+            accesses_list.erase(list_it++); // Erase and increment iterator to check next access
         }
         else
         {
             // Redundant way to check witness
-            total_witness = total_witness + *it->second.access_witness;
-            ++it;
+            total_witness = total_witness + *list_it->second.access_witness;
+            ++list_it;
         }
     }
+
+    std::map<int, std::vector<unsigned>>::iterator map_it=processed_accesses_map.begin();
+    while ( map_it!=processed_accesses_map.end())
+    {
+        unsigned count =0;
+        std::vector<unsigned>::iterator vector_it=map_it->second.begin();
+        while ( vector_it!=map_it->second.end())
+        {
+            ++count;
+            if (max_inflight_processed_accesses!=0 || count>max_inflight_processed_accesses)
+                throw Error(misc::fmt("Number of inflight proccessed access: %d "
+                                      "is bigger than the allowed"
+                                      "max number of proccessed access: %lld"
+                                      "Make sure processed access are being consumed",
+                                      count, max_inflight_processed_accesses));
+
+
+            ++vector_it;
+        }
+        ++map_it;
+    }
+
+
     // Success
     return 0;
 }
