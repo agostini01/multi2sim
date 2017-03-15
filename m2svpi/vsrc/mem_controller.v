@@ -49,9 +49,9 @@ assign rw = request_in[REQ_WIDTH-1]; // Flag
 assign address[ADDR_WIDTH-1:0] = request_in[ADDR_WIDTH + DATA_WIDTH-1:DATA_WIDTH]; // Address
 assign data [DATA_WIDTH-1:0] = request_in[DATA_WIDTH-1:0]; // Data
 
-reg [REQ_WIDTH-1:0]id_out;
+reg [TID_WIDTH-1:0]id_out;
 reg [DATA_WIDTH-1:0]data_out;
-assign outgoing_data [VPI_DATA_WIDTH-1:0] = {id_out[REQ_WIDTH-1:0], data_out[DATA_WIDTH-1:0]};
+assign outgoing_data [VPI_DATA_WIDTH-1:0] = {id_out[TID_WIDTH-1:0], data_out[DATA_WIDTH-1:0]};
 
 // This overhead is necessary because it is complicated to
 // translate the value from a net to a c object
@@ -99,6 +99,24 @@ begin
     end
     else
       read_ctr = 0;
+  end
+end
+
+always@(posedge clk,posedge reset)
+begin
+  if(reset) 
+  begin
+    data_out=0;
+    id_out=0;
+  end
+  else
+  begin
+    if (!full_signal) begin
+      write_ctr = 1;
+      id_out=$m2s_getProcessed(MODULE_NUM); // mod
+    end
+    else
+      write_ctr = 0;
   end
 end
 

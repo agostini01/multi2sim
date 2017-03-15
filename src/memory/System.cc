@@ -713,9 +713,9 @@ int System::checkProccessedEvents()
             // Add the identifier to the vector of processed identifiers
             // FIXME: Must change the key to represent the right module it->second.access_module_name
             processed_accesses_map[0].push_front(list_it->first);
-            std::cout << "============ Access id: "<<list_it->first
+            std::cout << "=========== Access id: "<<list_it->first
                       << " to address " << list_it->second.access_address
-                      << " finished accessing ============="<< '\n';
+                      << " finished accessing ============"<< '\n';
 
             free(list_it->second.access_witness);
             accesses_list.erase(list_it++); // Erase and increment iterator to check next access
@@ -767,20 +767,25 @@ int System::Finalize(){
 int System::GetProccessedAccesses(const unsigned int &mod)
 {
     std::cout<<"\t\t GetProccessedAccesses!"<<std::endl;
-    if(processed_accesses_map.at(mod).size()<1)
+    std::cout<<"\t\t @mod: "<<mod<<std::endl;
+    std::cout<<"\t\t size: "<<processed_accesses_map[mod].size()<<std::endl;
+    if(processed_accesses_map[mod].size()<1)
+    {
+        std::cout<<"\t\t Return: "<<-1<<std::endl;
         return -1;
+    }
     else
     {
-        int identifier = processed_accesses_map.at(mod).back();
-        processed_accesses_map.at(mod).pop_back();
+        int identifier = processed_accesses_map[mod].back();
+        std::cout<<"\t\t The identifier!"<<identifier<<std::endl;
+        processed_accesses_map[mod].pop_back();
         return identifier;
-
     }
 }
 
 std::list<unsigned> *System::GetProccessedAccessesList(const unsigned int &mod)
 {
-    return &processed_accesses_map.at(mod);
+    return &processed_accesses_map[mod];
 }
 
 void System::TraceFileRun()

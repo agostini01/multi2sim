@@ -428,7 +428,7 @@ PLI_INT32 m2s_getProcessed_calltf(PLI_BYTE8 *user_data)
     systf_handle = vpi_handle(vpiSysTfCall, NULL);
     arg_itr = vpi_iterate(vpiArgument, systf_handle);
     if (arg_itr == NULL) {
-      vpi_printf("ERROR: $access failed to obtain systf arg handles\n");
+      vpi_printf("ERROR: $m2s_getProcessed failed to obtain systf arg handles\n");
       return(0);
     }
 
@@ -437,7 +437,11 @@ PLI_INT32 m2s_getProcessed_calltf(PLI_BYTE8 *user_data)
     vpi_get_value(arg_handle, &value_s);
     mod = value_s.value.integer;
 
-    return(Multi2Sim::getInstance().m2sGetProcessedAccess((unsigned int)mod));
+	/* write result to simulation as return value $getProcessed */
+  	value_s.value.integer = 
+		(PLI_INT32) Multi2Sim::getInstance().m2sGetProcessedAccess((unsigned int)mod);
+  	vpi_put_value(systf_handle, &value_s, NULL, vpiNoDelay);
+	return 0;
 }
 
 /**********************************************************************
@@ -482,8 +486,6 @@ PLI_INT32 m2s_getProcessed_compiletf(PLI_BYTE8 *user_data)
     if (err_flag) {
       vpi_control(vpiFinish, 1);  /* abort simulation */
     }
-
-    return(0);
 
     return(0);
 }
