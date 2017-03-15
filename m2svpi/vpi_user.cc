@@ -18,6 +18,7 @@ extern void m2s_initialize_register();
 extern void m2s_reset_register();
 extern void m2s_access_register();
 extern void m2s_step_register();
+extern void m2s_getProcessed_register();
 extern void m2s_finalize_register();
 
 void (*vlog_startup_routines[])() =
@@ -27,6 +28,7 @@ void (*vlog_startup_routines[])() =
 	m2s_initialize_register,
 	m2s_reset_register,
 	m2s_step_register,
+	m2s_getProcessed_register,
 	m2s_access_register,
 	m2s_finalize_register,
 	0 /*** final entry must be 0 ***/

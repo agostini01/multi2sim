@@ -1,5 +1,5 @@
 #Outside Dependency DIRS and Programs
-#MODELSIM=/home/agostini/altera_lite/16.0/modelsim_ase/linuxaloem
+MODELSIM=/home/agostini/altera_lite/16.0/modelsim_ase/linuxaloem
 ifndef MODELSIM
 $(error MODELSIM variable not set)
 endif

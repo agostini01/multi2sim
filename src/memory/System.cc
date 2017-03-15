@@ -62,7 +62,7 @@ unsigned int System::access_identifier = 0;
 unsigned int System::total_witness =0;
 long long System::max_inflight_processed_accesses = 10000;
 std::map<int, a_access> System::accesses_list;
-std::map<int,std::vector<unsigned>> System::processed_accesses_map;
+std::map<int,std::list<unsigned>> System::processed_accesses_map;
 bool System::sim_mem_stand_alone_random = false;
 std::string System::input_memory_trace_file;
 
@@ -366,10 +366,10 @@ void System::RegisterOptions()
 			"be used together with detailed simulation of any "
 			"CPU/GPU architecture.");
 
-	// Option sanity check
-	command_line->RegisterInt64("--mem-sanity-check <interval>",
-			sanity_check_interval,
-			"This option performs a sanity check for the underlying "
+    // Option sanity check
+    command_line->RegisterInt64("--mem-sanity-check <interval>",
+            sanity_check_interval,
+            "This option performs a sanity check for the underlying "
 			"coherency protocol in constant periods equal to the interval, "
 			"to examine its consistency and correctness. The simulation "
 			"fails if the correctness is not maintained.");
@@ -444,7 +444,7 @@ void System::RandomInjectionRun()
 	// Set the witness value to the number of events
 	int witness = -1 * access_counts;
 
-	// Get current cycle and check max cycles
+    // Get current cycle and check max cycles
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 
 	// Loop from the beginning to the end the simulation
@@ -454,7 +454,7 @@ void System::RandomInjectionRun()
 		if (cycle >= max_cycles)
 			break;
 
-		// Traverse all nodes to check if some nodes need injection
+        // Traverse all nodes to check if some nodes need injection
 		for (int i = 0; i < (int) modules.size(); i++)
 		{
 			// Get the iterator to the module
@@ -468,7 +468,7 @@ void System::RandomInjectionRun()
 			if (module->getLevel() != 1)
 				continue;
 
-			// Check turn for next injection
+            // Check turn for next injection
 			if (inject_time[i] > cycle)
 				continue;
 
@@ -556,7 +556,7 @@ void System::Access(const unsigned int &mod
 
 			// new witness
 			            // TODO: Change to implementation of smart pointer provided by m2s
-			            // free is performed at: int System::checkProccessedEvents()
+                        // free is performed at: int System::checkProccessedEvents()
 			int *current_witness = (int *)malloc(sizeof(int));
 
 
@@ -617,7 +617,7 @@ void System::Access(const unsigned int &mod, const unsigned int &type, const uns
 
             // new witness
 						// TODO: Change to implementation of smart pointer provided by m2s
-						// free is performed at: int System::checkProccessedEvents()
+                        // free is performed at: int System::checkProccessedEvents()
             int *current_witness = (int *)malloc(sizeof(int));
 
 
@@ -660,7 +660,7 @@ void System::Access(const unsigned int &mod, const mem::Module::AccessType& type
 
             // new witness
 						// TODO: Change to implementation of smart pointer provided by m2s
-						// free is performed at: int System::checkProccessedEvents()
+                        // free is performed at: int System::checkProccessedEvents()
             int *current_witness = (int *)malloc(sizeof(int));
 
 
@@ -712,7 +712,7 @@ int System::checkProccessedEvents()
             // FIXME: Has to change VPI objects or pass information
             // Add the identifier to the vector of processed identifiers
             // FIXME: Must change the key to represent the right module it->second.access_module_name
-            processed_accesses_map.at(0).push_back(list_it->first);
+            processed_accesses_map[0].push_front(list_it->first);
             std::cout << "============ Access id: "<<list_it->first
                       << " to address " << list_it->second.access_address
                       << " finished accessing ============="<< '\n';
@@ -728,15 +728,15 @@ int System::checkProccessedEvents()
         }
     }
 
-    std::map<int, std::vector<unsigned>>::iterator map_it=processed_accesses_map.begin();
+    std::map<int, std::list<unsigned>>::iterator map_it=processed_accesses_map.begin();
     while ( map_it!=processed_accesses_map.end())
     {
         unsigned count =0;
-        std::vector<unsigned>::iterator vector_it=map_it->second.begin();
-        while ( vector_it!=map_it->second.end())
+        std::list<unsigned>::iterator inner_list_it=map_it->second.begin();
+        while ( inner_list_it!=map_it->second.end())
         {
             ++count;
-            if (max_inflight_processed_accesses!=0 || count>max_inflight_processed_accesses)
+            if (max_inflight_processed_accesses!=0 && count>max_inflight_processed_accesses)
                 throw Error(misc::fmt("Number of inflight proccessed access: %d "
                                       "is bigger than the allowed"
                                       "max number of proccessed access: %lld"
@@ -744,7 +744,7 @@ int System::checkProccessedEvents()
                                       count, max_inflight_processed_accesses));
 
 
-            ++vector_it;
+            ++inner_list_it;
         }
         ++map_it;
     }
@@ -762,6 +762,25 @@ int System::Finalize(){
     esim_engine->Finish("MaxTime");
 
     return 0;
+}
+
+int System::GetProccessedAccesses(const unsigned int &mod)
+{
+    std::cout<<"\t\t GetProccessedAccesses!"<<std::endl;
+    if(processed_accesses_map.at(mod).size()<1)
+        return -1;
+    else
+    {
+        int identifier = processed_accesses_map.at(mod).back();
+        processed_accesses_map.at(mod).pop_back();
+        return identifier;
+
+    }
+}
+
+std::list<unsigned> *System::GetProccessedAccessesList(const unsigned int &mod)
+{
+    return &processed_accesses_map.at(mod);
 }
 
 void System::TraceFileRun()
@@ -960,7 +979,7 @@ void System::SanityCheck()
 				{
 					module->Dump();
 					lower_module->Dump();
-					throw Error(misc::fmt("Sanity check failed\n"
+                    throw Error(misc::fmt("Sanity check failed\n"
 					"window %lld to %lld: The module %s "
 					"has a block that is not found in "
 					"module's approperiate lower module %s\n",

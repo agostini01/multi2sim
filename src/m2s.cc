@@ -548,6 +548,12 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
 
 }
 
+unsigned Multi2Sim::m2sGetProcessedAccess(const unsigned int &mod)
+{
+    mem::System *mem_system = mem::System::getInstance();
+    return mem_system->GetProccessedAccesses(mod);
+}
+
 void Multi2Sim::m2sStep()
 {
     std::cout<<"M2S::vpiStep()"<<std::endl;

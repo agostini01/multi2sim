@@ -366,7 +366,7 @@ public:
        static std::map<int, a_access> accesses_list;
 
        // List of procced accesses based on the module.
-       static std::map<int, std::vector<unsigned>> processed_accesses_map;
+       static std::map<int, std::list<unsigned>> processed_accesses_map;
 
 
 	//
@@ -515,6 +515,8 @@ public:
 
         int Finalize();
 
+        int GetProccessedAccesses(const unsigned int &mod);
+        std::list<unsigned> *GetProccessedAccessesList(const unsigned int &mod);
 
 private:
         int checkProccessedEvents();

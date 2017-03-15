@@ -48,6 +48,9 @@ public:
           , const unsigned int &identifier
           );
 
+    // Return the ID of a processed access for a given module
+    unsigned m2sGetProcessedAccess(const unsigned int &mod);
+
     // Finilize simulation and generate dump files
     void m2sFinalize();
 
