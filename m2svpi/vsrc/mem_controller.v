@@ -84,8 +84,7 @@ always@(posedge clk,posedge reset)
 begin
   if(reset) 
   begin
-    data_out=0;
-    id_out=0;
+	read_ctr = 0;
   end
   else
   begin
@@ -108,12 +107,13 @@ begin
   begin
     data_out=0;
     id_out=0;
+	write_ctr = 0;
   end
   else
   begin
     if (!full_signal) begin
       write_ctr = 1;
-      id_out=$m2s_getProcessed(MODULE_NUM); // mod
+      $m2s_getProcessed(MODULE_NUM,id_out,data_out); // mod
     end
     else
       write_ctr = 0;

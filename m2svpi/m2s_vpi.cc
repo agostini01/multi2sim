@@ -412,7 +412,7 @@ void m2s_getProcessed_register()
 PLI_INT32 m2s_getProcessed_sizetf(PLI_BYTE8 *user_data)
 {
     vpi_printf("VPI::In m2s_getProcessed_compiletf call\n");
-    return(32);
+    return(0);
 }
 /**********************************************************************
  * calltf routine
@@ -423,7 +423,7 @@ PLI_INT32 m2s_getProcessed_calltf(PLI_BYTE8 *user_data)
 
     s_vpi_value value_s;
     vpiHandle   systf_handle, arg_itr, arg_handle;
-	PLI_INT32   mod;
+	PLI_INT32   mod, identifier, data;
 
     systf_handle = vpi_handle(vpiSysTfCall, NULL);
     arg_itr = vpi_iterate(vpiArgument, systf_handle);
@@ -437,9 +437,25 @@ PLI_INT32 m2s_getProcessed_calltf(PLI_BYTE8 *user_data)
     vpi_get_value(arg_handle, &value_s);
     mod = value_s.value.integer;
 
+	arg_handle = vpi_scan(arg_itr);
+    value_s.format = vpiIntVal;
+    vpi_get_value(arg_handle, &value_s);
+    identifier = value_s.value.integer;
+	value_s.value.integer =  // Get the value for the returning IDENTIFIER
+		(PLI_INT32) Multi2Sim::getInstance().m2sGetProcessedAccess((unsigned int)mod); 
+	vpi_put_value(arg_handle, &value_s, NULL, vpiNoDelay); // performs the actual writting 
+
+	arg_handle = vpi_scan(arg_itr);
+    value_s.format = vpiIntVal;
+    vpi_get_value(arg_handle, &value_s);
+    data = value_s.value.integer;
+	value_s.value.integer = 13; // Get the value for the returning DATA
+	vpi_put_value(arg_handle, &value_s, NULL, vpiNoDelay); // performs the actual writting 
+
 	/* write result to simulation as return value $getProcessed */
   	value_s.value.integer = 
 		(PLI_INT32) Multi2Sim::getInstance().m2sGetProcessedAccess((unsigned int)mod);
+
   	vpi_put_value(systf_handle, &value_s, NULL, vpiNoDelay);
 	return 0;
 }
@@ -461,7 +477,7 @@ PLI_INT32 m2s_getProcessed_compiletf(PLI_BYTE8 *user_data)
       if (systf_handle == NULL)
 	  vpi_printf("something is wrong\n");
       if (arg_itr == NULL) {
-	vpi_printf("ERROR: $access() requires 1 argument; has none\n");
+	vpi_printf("ERROR: $access() requires 3 argument; has none\n");
 	err_flag = 1;
 	break;
       }
@@ -475,8 +491,26 @@ PLI_INT32 m2s_getProcessed_compiletf(PLI_BYTE8 *user_data)
 	err_flag = 1;
 	break;
       }
+      arg_handle = vpi_scan(arg_itr);
+      tfarg_type = vpi_get(vpiType, arg_handle);
+      if ( (tfarg_type != vpiReg) &&
+	   (tfarg_type != vpiIntegerVar) &&
+	   (tfarg_type != vpiConstant)  ) {
+	vpi_printf("ERROR: $access() arg2 must be number, variable, net\n");
+	err_flag = 1;
+	break;
+      }
+      arg_handle = vpi_scan(arg_itr);
+      tfarg_type = vpi_get(vpiType, arg_handle);
+      if ( (tfarg_type != vpiReg) &&
+	   (tfarg_type != vpiIntegerVar) &&
+	   (tfarg_type != vpiConstant)  ) {
+	vpi_printf("ERROR: $access() arg3 must be number, variable, net\n");
+	err_flag = 1;
+	break;
+      }
 	  if (vpi_scan(arg_itr) != NULL) {
-	vpi_printf("ERROR: $access() requires 1 argument; has too many\n");
+	vpi_printf("ERROR: $access() requires 3 argument; has too many\n");
 	vpi_free_object(arg_itr);
 	err_flag = 1;
 	break;
