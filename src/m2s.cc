@@ -517,10 +517,12 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
                          , const unsigned int &type
                          , const unsigned int &address)
 {
-    std::cout<<"M2S::vpiAccess()"		<<std::endl
-             <<"\tmod = "	    << mod	<<std::endl
-             <<"\ttype = "    << type	<<std::endl
-             <<"\taddress = " << address	<<std::endl;
+    std::cout<<"M2S::vpiAccess()"                   <<std::endl
+            <<"\tModule = "         << mod          <<std::endl
+            <<"\tIdentifier = "     << "N/A"    	<<std::endl
+            <<"\tType = "           << type         <<std::endl
+            <<"\tAddress = "        << address      <<std::endl
+            <<"\tData = "           << "N/A"        <<std::endl<<std::endl;
 
     // mod-l1-0
     // Get the right module
@@ -535,10 +537,12 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
                          , const unsigned int &address
                          , const unsigned int &identifier)
 {
-    std::cout<<"M2S::vpiAccess()"		<<std::endl
-             <<"\tmod = "	    << mod	<<std::endl
-             <<"\ttype = "    << type	<<std::endl
-             <<"\taddress = " << address	<<std::endl;
+    std::cout<<"M2S::vpiAccess()"                   <<std::endl
+            <<"\tModule = "         << mod          <<std::endl
+            <<"\tIdentifier = "     << identifier	<<std::endl
+            <<"\tType = "           << type         <<std::endl
+            <<"\tAddress = "        << address      <<std::endl
+            <<"\tData = "           << "N/A"        <<std::endl<<std::endl;
 
     // mod-l1-0
     // Get the right module
@@ -550,6 +554,7 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
 
 unsigned Multi2Sim::m2sGetProcessedAccess(const unsigned int &mod)
 {
+    std::cout<<"M2S::vpiGetProcessed()"           <<std::endl;
     mem::System *mem_system = mem::System::getInstance();
     return mem_system->GetProccessedAccesses(mod);
 }

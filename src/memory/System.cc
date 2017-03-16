@@ -565,8 +565,9 @@ void System::Access(const unsigned int &mod
 			a_access current_access = {
 			    identifier,
 			    address,
-			    the_type,
-			    "test",
+                the_type,
+                mod,
+                module_name.c_str(),
 			    current_witness
 			};
 			accesses_list.emplace(identifier,current_access);
@@ -627,7 +628,8 @@ void System::Access(const unsigned int &mod, const unsigned int &type, const uns
                 access_identifier,
                 address,
                 the_type,
-                "test",
+                mod,
+                module_name.c_str(),
                 current_witness
             };
             accesses_list.emplace(access_identifier,current_access);
@@ -670,7 +672,8 @@ void System::Access(const unsigned int &mod, const mem::Module::AccessType& type
                 access_identifier,
                 address,
                 type,
-                "test",
+                mod,
+                module_name.c_str(),
                 current_witness
             };
             accesses_list.emplace(access_identifier,current_access);
@@ -712,7 +715,7 @@ int System::checkProccessedEvents()
             // FIXME: Has to change VPI objects or pass information
             // Add the identifier to the vector of processed identifiers
             // FIXME: Must change the key to represent the right module it->second.access_module_name
-            processed_accesses_map[0].push_front(list_it->first);
+            processed_accesses_map[list_it->second.access_module_number].push_front(list_it->first);
             std::cout << "=========== Access id: "<<list_it->first
                       << " to address " << list_it->second.access_address
                       << " finished accessing ============"<< '\n';
@@ -766,18 +769,24 @@ int System::Finalize(){
 
 int System::GetProccessedAccesses(const unsigned int &mod)
 {
-    std::cout<<"\t\t GetProccessedAccesses!"<<std::endl;
-    std::cout<<"\t\t @mod: "<<mod<<std::endl;
-    std::cout<<"\t\t size: "<<processed_accesses_map[mod].size()<<std::endl;
+    std::cout  <<"\tModule = "         << mod          <<std::endl;
+
     if(processed_accesses_map[mod].size()<1)
     {
-        std::cout<<"\t\t Return: "<<-1<<std::endl;
+        std::cout  <<"\tIdentifier = "     << "N/A"	<<std::endl
+                   <<"\tType = "           << "N/A"         <<std::endl
+                   <<"\tAddress = "        << "N/A"      <<std::endl
+                   <<"\tData = "           << "N/A"        <<std::endl;
+        std::cout<<"\tNo access on this iteration: "<<-1<<std::endl<<std::endl;
         return -1;
     }
     else
     {
         int identifier = processed_accesses_map[mod].back();
-        std::cout<<"\t\t The identifier!"<<identifier<<std::endl;
+        std::cout  <<"\tIdentifier = "     << identifier	<<std::endl
+                   <<"\tType = "           << "N/A"         <<std::endl
+                   <<"\tAddress = "        << "N/A"      <<std::endl
+                   <<"\tData = "           << "N/A"        <<std::endl<<std::endl;
         processed_accesses_map[mod].pop_back();
         return identifier;
     }

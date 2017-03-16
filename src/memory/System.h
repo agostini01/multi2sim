@@ -45,6 +45,7 @@ struct a_access
     unsigned access_id;
     unsigned access_address;
     mem::Module::AccessType access_type;
+    unsigned access_module_number;
     const char* access_module_name;
     int* access_witness;
 

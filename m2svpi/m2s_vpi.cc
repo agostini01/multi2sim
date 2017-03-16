@@ -3,6 +3,27 @@
 #include <cstdlib>    /* ANSI C standard library */
 #include "vpi_user.h"  /* IEEE 1364 PLI VPI routine library  */
 #include <m2s.h>
+#include <map>
+#include <list>
+
+struct a_access
+{
+	//unsigned access_module;
+    //unsigned access_id;
+    unsigned access_type;
+    unsigned access_address;	
+    unsigned access_data;
+};
+
+static std::map<unsigned, unsigned> memory_file; // address, data
+static std::map<unsigned, std::map<unsigned, a_access>> inflight_accesses; // <module,<id,access>>
+
+void SeeMemory()
+{
+		std::map<unsigned,unsigned>::iterator it2;
+		for (it2 = memory_file.begin();it2!=memory_file.end();it2++)
+			vpi_printf("\t\t Adr: %d \t\t Data: %d\n",it2->first,it2->second);
+}
 
 #if VPI_1995
 #include "../vpi_1995_compat.h"  /* kludge new Verilog-2001 routines */
@@ -276,6 +297,17 @@ PLI_INT32 m2s_access_calltf(PLI_BYTE8 *user_data)
     vpi_get_value(arg_handle, &value_s);
 	identifier = value_s.value.integer;
 
+			// TODO: REMOVE
+			vpi_printf("\tModule: %d\n",mod);
+			vpi_printf("\tIdentifier: %d\n",identifier);
+			vpi_printf("\tType: %d\n",type);
+			vpi_printf("\tAddress: %d\n",address);
+			vpi_printf("\tData: %d\n\n",data);
+
+	// Save in the inflight accesses for the VPI	
+	a_access the_access = {(unsigned)type,(unsigned)address,(unsigned)data};
+	inflight_accesses[mod].insert(std::make_pair(identifier, the_access));
+
     Multi2Sim::getInstance().m2sAccess((unsigned int) mod
 				      ,(unsigned int) type
 				      ,(unsigned int) address
@@ -406,6 +438,7 @@ void m2s_getProcessed_register()
     vpi_register_systf(&tf_data);
     return;
 }
+
 /**********************************************************************
  * sizetf routine
  *********************************************************************/
@@ -437,27 +470,64 @@ PLI_INT32 m2s_getProcessed_calltf(PLI_BYTE8 *user_data)
     vpi_get_value(arg_handle, &value_s);
     mod = value_s.value.integer;
 
-	arg_handle = vpi_scan(arg_itr);
-    value_s.format = vpiIntVal;
-    vpi_get_value(arg_handle, &value_s);
-    identifier = value_s.value.integer;
-	value_s.value.integer =  // Get the value for the returning IDENTIFIER
-		(PLI_INT32) Multi2Sim::getInstance().m2sGetProcessedAccess((unsigned int)mod); 
-	vpi_put_value(arg_handle, &value_s, NULL, vpiNoDelay); // performs the actual writting 
+	// Get the value from multi2sim
+    identifier = (PLI_INT32) Multi2Sim::getInstance().m2sGetProcessedAccess((unsigned int)mod);
+
+			// TODO: REMOVE
+		    vpi_printf("VPI::(CONT) In m2s_getProcessed_calltf call\n"); 
+			vpi_printf("\tModule: %d\n",mod);
 
 	arg_handle = vpi_scan(arg_itr);
     value_s.format = vpiIntVal;
-    vpi_get_value(arg_handle, &value_s);
-    data = value_s.value.integer;
-	value_s.value.integer = 13; // Get the value for the returning DATA
-	vpi_put_value(arg_handle, &value_s, NULL, vpiNoDelay); // performs the actual writting 
+	value_s.value.integer = identifier; // Get the value for the returning IDENTIFIER
+	vpi_put_value(arg_handle, &value_s, NULL, vpiNoDelay); // performs the actual writting
 
-	/* write result to simulation as return value $getProcessed */
-  	value_s.value.integer = 
-		(PLI_INT32) Multi2Sim::getInstance().m2sGetProcessedAccess((unsigned int)mod);
+			// TODO: REMOVE
+			vpi_printf("\tIdentifier: %d\n",identifier);
 
-  	vpi_put_value(systf_handle, &value_s, NULL, vpiNoDelay);
-	return 0;
+	// Now check if this idenfier exists for the module
+	// If it does, checks if it is a read or write
+	// If it is a read, returns the value to verilog
+	// If it is a write, save the value on the table
+	// Delete this element, as it is no longer necessary
+	std::map<unsigned,a_access>::iterator it;		
+	it = inflight_accesses[mod].find(value_s.value.integer);
+	
+	if (it != inflight_accesses[mod].end())
+	{
+		// Identifier exists!
+		
+			// TODO: REMOVE
+			vpi_printf("\tType: %d\n",it->second.access_type);
+			vpi_printf("\tAddress: %d\n",it->second.access_address);
+
+			
+		
+		if (it->second.access_type == 1)  // read
+		{
+			vpi_printf("\tRead Data: %d\n\n",memory_file[it->second.access_address]);
+			// get the value from the table and return it to verilog			
+			arg_handle = vpi_scan(arg_itr);
+			value_s.format = vpiIntVal;
+			value_s.value.integer = (PLI_INT32) memory_file[it->second.access_address]; // Get the value for the returning DATA
+			vpi_put_value(arg_handle, &value_s, NULL, vpiNoDelay); // performs the actual writting 
+			
+		}
+		else if (it->second.access_type == 2) // write
+		{
+			memory_file[it->second.access_address] = it->second.access_data;
+			vpi_printf("\tWrote Data: %d\n\n",memory_file[it->second.access_address]);
+		}
+
+		// Deleting the access element
+		inflight_accesses[mod].erase (it);
+	}
+	else
+	{
+		vpi_printf("Access id %d was no found on current map, check everything is ok\n",value_s.value.integer);
+	}
+
+	return 0;	
 }
 
 /**********************************************************************
@@ -477,7 +547,7 @@ PLI_INT32 m2s_getProcessed_compiletf(PLI_BYTE8 *user_data)
       if (systf_handle == NULL)
 	  vpi_printf("something is wrong\n");
       if (arg_itr == NULL) {
-	vpi_printf("ERROR: $access() requires 3 argument; has none\n");
+	vpi_printf("ERROR: $getProcessed() requires 3 argument; has none\n");
 	err_flag = 1;
 	break;
       }
@@ -487,7 +557,7 @@ PLI_INT32 m2s_getProcessed_compiletf(PLI_BYTE8 *user_data)
 	   (tfarg_type != vpiIntegerVar) &&
 	   (tfarg_type != vpiConstant) &&
        (tfarg_type != vpiParameter)  ) {
-	vpi_printf("ERROR: $access() arg1 must be number, variable, net or parameter\n");
+	vpi_printf("ERROR: $getProcessed() arg1 must be number, variable, net or parameter\n");
 	err_flag = 1;
 	break;
       }
@@ -496,7 +566,7 @@ PLI_INT32 m2s_getProcessed_compiletf(PLI_BYTE8 *user_data)
       if ( (tfarg_type != vpiReg) &&
 	   (tfarg_type != vpiIntegerVar) &&
 	   (tfarg_type != vpiConstant)  ) {
-	vpi_printf("ERROR: $access() arg2 must be number, variable, net\n");
+	vpi_printf("ERROR: $getProcessed() arg2 must be number, variable, net\n");
 	err_flag = 1;
 	break;
       }
@@ -505,12 +575,12 @@ PLI_INT32 m2s_getProcessed_compiletf(PLI_BYTE8 *user_data)
       if ( (tfarg_type != vpiReg) &&
 	   (tfarg_type != vpiIntegerVar) &&
 	   (tfarg_type != vpiConstant)  ) {
-	vpi_printf("ERROR: $access() arg3 must be number, variable, net\n");
+	vpi_printf("ERROR: $getProcessed() arg3 must be number, variable, net\n");
 	err_flag = 1;
 	break;
       }
 	  if (vpi_scan(arg_itr) != NULL) {
-	vpi_printf("ERROR: $access() requires 3 argument; has too many\n");
+	vpi_printf("ERROR: $getProcessed() requires 3 argument; has too many\n");
 	vpi_free_object(arg_itr);
 	err_flag = 1;
 	break;
@@ -523,5 +593,3 @@ PLI_INT32 m2s_getProcessed_compiletf(PLI_BYTE8 *user_data)
 
     return(0);
 }
-
-

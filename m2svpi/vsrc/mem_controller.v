@@ -1,7 +1,7 @@
 //-----------------------------------------------------
 // Design Name : mem_controller
 // File Name   : mem_controller.v
-// Function    : Table to keep track of the id
+// Function    : Controller that issues and get access to and from m2s
 // Coder       : Nicolas Bohm Agostini
 //-----------------------------------------------------
 module mem_controller (
@@ -63,7 +63,7 @@ reg [DATA_WIDTH-1:0]access_data;
 reg [TID_WIDTH-1:0]access_identifier;
 initial begin
 	if(rw)
-		access_type=1;
+		access_type=1; // read
 	else
 		access_type=2;
 	access_address=address;
@@ -72,7 +72,7 @@ initial begin
 end
 always@(rw,address,data) begin
 	if(rw)
-		access_type=1;
+		access_type=1; // read
 	else
 		access_type=2;
 	access_address=address;
