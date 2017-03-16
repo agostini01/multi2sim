@@ -1,5 +1,5 @@
 #Outside Dependency DIRS and Programs
-MODELSIM=/home/agostini/altera_lite/16.0/modelsim_ase/linuxaloem
+#MODELSIM=/home/agostini/altera_lite/16.0/modelsim_ase/linuxaloem
 ifndef MODELSIM
 $(error MODELSIM variable not set)
 endif
@@ -84,6 +84,10 @@ run:
 .PHONY: visual
 visual:
 	$(MODELSIM)/vsim -pli $(TARGET) $(TESTBENCH) -do "waves/wave.do" -do "run 100ns"
+
+.PHONY: visual-mem-controller
+visual-mem-controller:
+	$(MODELSIM)/vsim -pli $(TARGET) mem_controller_tb -do "waves/mem_controller_wave.do" -do "run 300ns"
 
 .PHONY: all
 all:

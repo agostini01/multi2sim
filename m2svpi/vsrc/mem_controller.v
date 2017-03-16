@@ -19,6 +19,7 @@ full_signal //full
 
 // Parameters---------------------------------------------------
 parameter MODULE_NUM = 0;
+parameter MODULE_WIDTH = 2; // Up to 4 modules by default
 parameter DATA_WIDTH = 32 ;
 parameter ADDR_WIDTH = 31 ;
 parameter TID_WIDTH = 16;
@@ -56,7 +57,7 @@ assign outgoing_data [VPI_DATA_WIDTH-1:0] = {id_out[TID_WIDTH-1:0], data_out[DAT
 // This overhead is necessary because it is complicated to
 // translate the value from a net to a c object
 // must be changed in te futre
-reg module_number = MODULE_NUM;
+reg [MODULE_WIDTH-1:0] module_number = MODULE_NUM;
 reg [1:0]access_type;
 reg [ADDR_WIDTH-1:0]access_address;
 reg [DATA_WIDTH-1:0]access_data;
