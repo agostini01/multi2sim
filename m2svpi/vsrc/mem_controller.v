@@ -199,10 +199,9 @@ initial begin
 end
 
 
-reg [DATA_WIDTH-1:0] req_data;
 always begin
 	#1  clk = ~clk;
-	#0	req_data=$m2s_step;
+	#0	$m2s_step;
 end
 
 always@(posedge clk) begin

@@ -95,7 +95,7 @@ visual-two-fifos:
 
 .PHONY: visual-interface
 visual-interface:
-	$(MODELSIM)/vsim -pli $(TARGET) interface_tb -do "waves/two_fifos_wave.do" -do "run 300ns"
+	$(MODELSIM)/vsim -pli $(TARGET) interface_tb -do "waves/interface_wave.do" -do "run 300ns"
 
 
 .PHONY: all
