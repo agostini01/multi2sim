@@ -206,7 +206,7 @@ void m2s_step_register()
 PLI_INT32 m2s_step_sizetf(PLI_BYTE8 *user_data)
 {
     vpi_printf("VPI::In m2s_step_compiletf call\n");
-    return(32);
+    return(0);
 }
 /**********************************************************************
  * compiletf routine

@@ -107,7 +107,7 @@ end
 );
 
   // Instance generator
-  interface i1(
+  interface_test i1(
     .clk(clk),
     .reset(reset),
     
@@ -128,12 +128,12 @@ endmodule
 
 /*** An RTL For the VPI communication ***/
 //-----------------------------------------------------
-// Design Name : interface
+// Design Name : interface_test
 // File Name   : module_tb.v
-// Function    : Interface to communicate to multi2sim
+// Function    : interface_test to communicate to multi2sim
 // Coder       : Nicolas Bohm Agostini
 //-----------------------------------------------------
-module interface (
+module interface_test (
 	clk, reset,
 	read_ctr, data_in, empty_flag,
 	write_ctr, data_out, full_flag
@@ -189,7 +189,7 @@ parameter VPI_DATA_WIDTH  = TID_WIDTH + DATA_WIDTH; // ID, Data
   // Other signals
   reg running;
 
-  // State machine to initialize the m2s interface
+  // State machine to initialize the m2s interface_test
   parameter init_st=0, reset_st=1, work_st=2, finish_st=3;
   reg [1:0] state;
 
