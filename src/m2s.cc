@@ -528,7 +528,7 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
     // Get the right module
     // FIX-ME Always the module number 0
     mem::System *mem_system = mem::System::getInstance();
-    mem_system->Access(0,type,address);
+    mem_system->Access(mod,type,address);
 
 }
 
@@ -548,7 +548,7 @@ void Multi2Sim::m2sAccess(const unsigned int &mod
     // Get the right module
     // FIX-ME Always the module number 0
     mem::System *mem_system = mem::System::getInstance();
-    mem_system->Access(0,type,address,identifier);
+    mem_system->Access(mod,type,address,identifier);
 
 }
 

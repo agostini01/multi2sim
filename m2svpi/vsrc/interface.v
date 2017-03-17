@@ -80,7 +80,7 @@ endmodule
 `timescale 1ns / 100ps
 module interface_tb ();
 // Parameters---------------------------------------------------
-parameter CONTROLLERS_WIDTH = 2;
+parameter CONTROLLERS_WIDTH = 1;
 
 parameter DATA_WIDTH = 32 ;
 parameter ADDR_WIDTH = 31 ;
@@ -108,7 +108,7 @@ interface #(.CONTROLLERS_WIDTH(CONTROLLERS_WIDTH)) U1 (
 	read_ctr_pack, data_in_pack, empty_flag_pack,
 	write_ctr_pack, data_out_pack, full_flag_pack
 );
-/*
+
 // Unpacking the ports
 // Direction ----------->
 genvar pk_idx;
@@ -117,10 +117,10 @@ wire [1-1:0]read_ctr						[0:CONTROLLERS_WIDTH-1]; // wire
 `UNPACK_ARRAY(pk_idx,1,CONTROLLERS_WIDTH,read_ctr,read_ctr_pack)
 
 reg [DP_DATA_WIDTH-1:0] data_in	[0:CONTROLLERS_WIDTH-1]; // reg
-`PACK_REG_ARRAY(unpk_idx,DP_DATA_WIDTH,CONTROLLERS_WIDTH,data_in,data_in_pack)
+`PACK_ARRAY(unpk_idx,DP_DATA_WIDTH,CONTROLLERS_WIDTH,data_in,data_in_pack)
 
 reg [1-1:0]empty_flag						[0:CONTROLLERS_WIDTH-1]; // reg
-`PACK_REG_ARRAY(unpk_idx,1,CONTROLLERS_WIDTH,empty_flag,empty_flag_pack)
+`PACK_ARRAY(unpk_idx,1,CONTROLLERS_WIDTH,empty_flag,empty_flag_pack)
 
 // Derection <-----------
 wire [1-1:0]write_ctr						[0:CONTROLLERS_WIDTH-1]; // wire
@@ -130,7 +130,7 @@ wire [VPI_DATA_WIDTH-1:0]data_out	[0:CONTROLLERS_WIDTH-1]; // wire
 `UNPACK_ARRAY(unpk_idx,VPI_DATA_WIDTH,CONTROLLERS_WIDTH,data_out,data_out_pack)
 
 reg [1-1:0]full_flag						[0:CONTROLLERS_WIDTH-1]; // reg
-`PACK_REG_ARRAY(unpk_idx,1,CONTROLLERS_WIDTH,full_flag,full_flag_pack)
+`PACK_ARRAY(unpk_idx,1,CONTROLLERS_WIDTH,full_flag,full_flag_pack)
 
 
 
@@ -142,25 +142,32 @@ initial begin
 
 	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1)
 		#0 empty_flag[i] = 1;
+
 	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1)
 		#0 full_flag[i] = 0;
- 	// address_in		
+
+	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1)  	// identification
+		#0 data_in[i][TID_WIDTH+REQ_WIDTH-1:REQ_WIDTH] = 0;
+
 	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1)
-		#0 data_in[i][ADDR_WIDTH + DATA_WIDTH-1:DATA_WIDTH] = 15;
-	
-	//#0 address_in = 0;
-	//#0 rw_flag_in = 1;
-	//#0 data_in = 7;
-	//#0 identification_in =0;
+		#0 data_in[i][REQ_WIDTH-1] = 1; // rw_flag
+		
+	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1)  	// address
+		#0 data_in[i][ADDR_WIDTH + DATA_WIDTH-1:DATA_WIDTH] = 0;
+
+	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1)  	// data
+		#0 data_in[i][DATA_WIDTH-1:0] = 15;
+
 
 	#5 reset = 1;
 	#5 reset = 0;
 	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1)
 		#0 empty_flag[i] = 0;
+
 	#10001 $m2s_finalize;
 	#10001 $finish;
 end
-*/
+
 //[TID_WIDTH+ 1 + ADDR_WIDTH + DATA_WIDTH]
 
 reg running;
@@ -174,11 +181,15 @@ always begin
 	#1  clk = ~clk;
 	#0	$m2s_step;
 end
-/*
+
 always@(posedge clk) begin
-		#0 identification_in = identification_in+1;
-		#0 address_in=$urandom_range(255,0);
-		#0 rw_flag_in=$urandom_range(2,1);
+	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1) begin
+		#0 data_in[i][TID_WIDTH+REQ_WIDTH-1:REQ_WIDTH] = 
+				data_in[i][TID_WIDTH+REQ_WIDTH-1:REQ_WIDTH] + 1; // identification[i]
+		#0 data_in[i][REQ_WIDTH-1] = $urandom_range(1,0); 		// rw_flag[i]
+		#0 data_in[i][ADDR_WIDTH + DATA_WIDTH-1:DATA_WIDTH] = $urandom_range(255,0); // Address[i]
+
+	end
 end
-*/
+
 endmodule

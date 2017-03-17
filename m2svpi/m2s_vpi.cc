@@ -190,8 +190,8 @@ void m2s_step_register()
 {
     s_vpi_systf_data tf_data;
 
-    tf_data.type        = vpiSysFunc;
-    tf_data.sysfunctype = vpiSysFuncSized;
+    tf_data.type        = vpiSysTask;
+    tf_data.sysfunctype = 0;
     tf_data.tfname      = "$m2s_step";
     tf_data.calltf      = m2s_step_calltf;
     tf_data.compiletf   = m2s_step_compiletf;
@@ -428,8 +428,8 @@ void m2s_getProcessed_register()
 {
     s_vpi_systf_data tf_data;
 
-    tf_data.type        = vpiSysFunc;
-    tf_data.sysfunctype = vpiSysFuncSized;
+    tf_data.type        = vpiSysTask;
+    tf_data.sysfunctype = 0;
     tf_data.tfname      = "$m2s_getProcessed";
     tf_data.calltf      = m2s_getProcessed_calltf;
     tf_data.compiletf   = m2s_getProcessed_compiletf;
