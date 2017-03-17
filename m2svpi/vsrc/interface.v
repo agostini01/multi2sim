@@ -108,7 +108,7 @@ interface #(.CONTROLLERS_WIDTH(CONTROLLERS_WIDTH)) U1 (
 	read_ctr_pack, data_in_pack, empty_flag_pack,
 	write_ctr_pack, data_out_pack, full_flag_pack
 );
-
+/*
 // Unpacking the ports
 // Direction ----------->
 genvar pk_idx;
@@ -135,7 +135,7 @@ reg [1-1:0]full_flag						[0:CONTROLLERS_WIDTH-1]; // reg
 
 
 integer i;
-/*
+
 initial begin
 	#0 clk = 0;
 	#0 reset = 0;
