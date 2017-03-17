@@ -135,7 +135,7 @@ reg [1-1:0]full_flag						[0:CONTROLLERS_WIDTH-1]; // reg
 
 
 integer i;
-
+/*
 initial begin
 	#0 clk = 0;
 	#0 reset = 0;
@@ -160,7 +160,7 @@ initial begin
 	#10001 $m2s_finalize;
 	#10001 $finish;
 end
-
+*/
 //[TID_WIDTH+ 1 + ADDR_WIDTH + DATA_WIDTH]
 
 reg running;
