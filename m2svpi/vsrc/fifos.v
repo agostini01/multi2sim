@@ -18,7 +18,7 @@ reg clk,reset;
 reg [DP_DATA_WIDTH-1:0]from_DP_data_in;
 reg from_DP_wr_ctr;
 
-wire[DP_DATA_WIDTH-1:0]to_VPI_data_out;
+wire[VPI_DATA_WIDTH-1:0]to_VPI_data_out;
 reg to_VPI_rd_ctr;
 
 wire to_VPI_empty,from_DP_full;

@@ -89,6 +89,10 @@ visual:
 visual-mem-controller:
 	$(MODELSIM)/vsim -pli $(TARGET) mem_controller_tb -do "waves/mem_controller_wave.do" -do "run 300ns"
 
+.PHONY: visual-two-fifos
+visual-mem-controller:
+	$(MODELSIM)/vsim -pli $(TARGET) tb_for_two_fifos -do "waves/two_fifos_wave.do" -do "run 300ns"
+
 .PHONY: all
 all:
 	make clean
