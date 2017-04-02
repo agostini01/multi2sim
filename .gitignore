@@ -20,6 +20,7 @@ test-driver
 m2svpi/obj/
 m2svpi/work/
 *.swp
+m2svpi/*.wlf
 m2svpi/debug-info.txt
 m2svpi/trace-info.gz
 m2svpi/transcript
