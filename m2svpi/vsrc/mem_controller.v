@@ -71,7 +71,7 @@ initial begin
 	access_data=data;
 	access_identifier=identification_in;
 end
-always@(rw,address,data) begin
+always@(rw,address,data,identification_in) begin
 	if(rw)
 		access_type=1; // read
 	else
