@@ -133,10 +133,11 @@ reg [1-1:0]full_flag						[0:CONTROLLERS_WIDTH-1]; // reg
 `PACK_ARRAY(unpk_idx,1,CONTROLLERS_WIDTH,full_flag,full_flag_pack)
 
 
-
+reg finishing_sim_flag;
 integer i;
 
 initial begin
+	#0 finishing_sim_flag = 0;
 	#0 clk = 0;
 	#0 reset = 0;
 
@@ -164,8 +165,11 @@ initial begin
 	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1)
 		#0 empty_flag[i] = 0;
 
-	#10001 $m2s_finalize;
-	#10001 $finish;
+	#100 finishing_sim_flag = 1;
+	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1)
+		#0 empty_flag[i] = 1;
+	#0 $m2s_finalize;
+	#500 $finish;
 end
 
 //[TID_WIDTH+ 1 + ADDR_WIDTH + DATA_WIDTH]
@@ -179,16 +183,20 @@ end
 
 always begin
 	#1  clk = ~clk;
-	#0	$m2s_step;
 end
 
 always@(posedge clk) begin
-	for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1) begin
-		#0 data_in[i][TID_WIDTH+REQ_WIDTH-1:REQ_WIDTH] = 
-				data_in[i][TID_WIDTH+REQ_WIDTH-1:REQ_WIDTH] + 1; // identification[i]
-		#0 data_in[i][REQ_WIDTH-1] = $urandom_range(1,0); 		// rw_flag[i]
-		#0 data_in[i][ADDR_WIDTH + DATA_WIDTH-1:DATA_WIDTH] = $urandom_range(255,0); // Address[i]
+	$m2s_step;
+end
 
+always@(posedge clk) begin
+	if (finishing_sim_flag==0) begin
+		for (i = 0; i < CONTROLLERS_WIDTH; i = i + 1) begin
+			#0 data_in[i][TID_WIDTH+REQ_WIDTH-1:REQ_WIDTH] = 
+					data_in[i][TID_WIDTH+REQ_WIDTH-1:REQ_WIDTH] + 1; // identification[i]
+			#0 data_in[i][REQ_WIDTH-1] = $urandom_range(1,0); 		// rw_flag[i]
+			#0 data_in[i][ADDR_WIDTH + DATA_WIDTH-1:DATA_WIDTH] = $urandom_range(255,0); // Address[i]
+		end
 	end
 end
 
